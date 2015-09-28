@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <iostream>
 #include <usb.h> //apt-get install libusb-dev
 #include <iostream>
 #include <vector>
@@ -9,7 +10,7 @@
 #include <bitset>
 #include <sys/types.h>
 #include <string.h> //memcpy
-
+#include <sstream>
 //source:
 //http://matthias.vallentin.net/blog/2007/04/writing-a-linux-kernel-driver-for-an-unknown-usb-device/
 //from: http://www.beyondlogic.org/usbnutshell/usb5.shtml
@@ -19,6 +20,26 @@
 //CONTROL URB https://www.safaribooksonline.com/library/view/linux-device-drivers/0596005903/ch13.html
 
 using namespace std;
+
+
+struct statusReport//size:64B
+{
+  uint16_t header;       //[ 0, 1] 0x04, 0x38, 0x11  [End of Transmission, 8, Device Control 1 (oft. XON)]
+  uint16_t unknown1;     //[ 2, 3] 0x11,0x08 << after movment (few seconds), 0x00,0x00 afterwards, 0x01,0x08 << while moving
+  uint8_t  height[2];    //[ 4, 5] low,high 0x00 0x00 <<bottom
+  uint8_t  moveDir;      //[  6  ] 0xe0 <<going down,0x10<< going up, 0xf0 starting going down
+  uint8_t  moveIndicator;//[  7  ] if != 0 them moving;
+  uint8_t  unknown2[12]; //[ 8-19] zero ??
+  uint8_t  unknown3[2];  //[20,21] 0x01 0x80 ??
+  uint8_t  unknown4[10]; //[22-31] zero ??
+  uint8_t  unknown5[3];  //[32,34] 0x01 0x00 0x36 ??
+  uint8_t  unknown6[7];  //[35,41] zero ??
+  uint16_t key;          //[42,43] button pressed down
+  uint8_t  unknown7[14]; //[44-57]no work was done
+  uint8_t  unknown8;     //[  58 ] 0x10/0x08 ??
+  uint8_t  unknown9[4];  //[59-63] zero ??
+};
+
 
 /*
 [ 6725.772231] usb 1-1.2: new full-speed USB device number 6 using ehci-pci
@@ -31,8 +52,7 @@ using namespace std;
 */
 static struct usb_device *find_usb2lin06()
 {
-  uint16_t vendor = 0x12d3;
-  uint16_t product = 0x0002;
+  uint16_t vendor = 0x12d3, product = 0x0002;
   struct usb_bus *bus;
   struct usb_device *dev;
   struct usb_bus *busses;
@@ -123,7 +143,7 @@ control responce data
  00000000 00000100 00111000 00010001 00001000 10101001 00001000 00000000 00000000 .8......
  00000000 00000100 00111000 00010001 00001000 01010010 00011001 00000000 00000000 .8..R...
 */
-void linakGetStatus(usb_dev_handle* udev)
+bool linakGetStatus(usb_dev_handle* udev, statusReport &report)
 {
   char buf[64]; //CONTROL responce data
   int ret = usb_control_msg(
@@ -146,46 +166,60 @@ void linakGetStatus(usb_dev_handle* udev)
     situation, it usually means what you sent was wrong.
     I'd double check the request, requesttype, value and index arguments.
     I'd also double check the title_request buffer.*/
-    return;
+    return false;
   }
 
-  //print
-  //  for(int i=0;i<12;i++) {    cout<<std::bitset<8>(buf[i])<<" "; }
-  //  for(int i=0;i<12;i++) {    cout<<setw(2)<<setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";} cout<<endl;
+  //Debug Print Binary
+  //for(int i=0;i<64;i++) {    cout<<std::bitset<8>(buf[i])<<" "; }
 
-  struct statusReport
-  {
-    unsigned char header[2];    //0x04, 0x38, 0x11  [End of Transmission, 8, Device Control 1 (oft. XON)]
-    unsigned char unknown1[2];  //0x11,0x08 << after movment (few seconds), 0x00,0x00 afterwards, 0x01,0x08 << while moving
-    unsigned char height[2];    //low,high 0x00 0x00 <<bottom
-    unsigned char moveDir;      //0xe0 <<going down,0x10<< going up, 0xf0 starting going down
-    unsigned char moveIndicator;//if != 0 them moving;
-    unsigned char unknown2[57]; //no work was done
-  };
+  //Debug Print Hex
+  //for(int i=0;i<64;i++) {    cout<<setw(2)<<setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";} cout<<endl;
 
-  statusReport report;
   memcpy(&report, buf, sizeof(report));
+  return (report.header==0x3804);
+}
 
-  bool isMoving= (report.moveIndicator!=0);
-  bool isBottom= (report.height[0]==0 && report.height[1]==0);
+void printStatusReport(const statusReport &report)
+{
+  bool  isMoving= (report.moveIndicator!=0);
+  bool  isBottom= (report.height[0]==0 && report.height[1]==0);
+  float height  = ((float)(int)report.height[0])/257 + (unsigned int)report.height[1];
 
-  cout<<setfill('0')<<std::hex
-      <<" header: 0x"<<setw(2)<<(int)report.header[0]<<" 0x"<<setw(2)<<(int)report.header[1]
-      <<" unknown1: 0x"<<setw(2)<<(int)report.unknown1[0]<<" 0x"<<setw(2)<<(int)report.unknown1[1]
-      <<" height: 0x"<<setw(2)<<(int)report.height[0]<<" 0x"<<setw(2)<<(int)report.height[1]
-      <<" moveDir: 0x"<<setw(2)<<(int)report.moveDir<<" "
-      <<" isMoving: 0x"<<setw(2)<<(int)report.moveIndicator;
-//  <<endl;
+  cout<<hex<<setfill('0')
+    <<" header:"<<setw(4)<<(int)report.header
+    <<" u1:"<<setw(4)<<(int)report.unknown1
+    <<" moveDir:"<<setw(2)<<(int)report.moveDir
+    <<" mi:"<<setw(2)<<(int)report.moveIndicator
+    <<" u3:"<<setw(2)<<(int)report.unknown3[0]<<setw(2)<<(int)report.unknown3[1]
+    <<" u5:"<<setw(2)<<(int)report.unknown5[0]<<setw(2)<<(int)report.unknown5[1]<<setw(2)<<(int)report.unknown5[2]
+    <<" key:"<<setw(4)<<(int)report.key
+    <<" u8:"<<setw(2)<<(int)report.unknown8
+  <<"\t";
 
+  switch(report.key)
+  {
+    case 0xffff: cout<<"--"; break;
+    case 0x0047: cout<<"B1"; break;
+    case 0x0046: cout<<"B2"; break;
+    case 0x000e: cout<<"B3"; break;
+    case 0x000f: cout<<"B4"; break;
+    case 0x000d: cout<<"B5"; break;
+    default:     cout<<"??"; break;
+  }
+
+/*
   switch(report.moveDir)
   {
     case 0xf0:
-    case 0xe0: cout<<"moving DOWN"; break;
-    case 0x10: cout<<"moving  UP "; break;
-    case 0x00: cout<<"moving  NO "; break;
+    case 0xe0: cout<<" DOWN "; break;
+    case 0x10: cout<<"  UP  "; break;
+    case 0x00: cout<<" STOP "; break;
   }
-  cout<<std::dec<<"height"<<(int)report.height[1]<<" 0b"<<std::bitset<8>(report.height[0])<<" "<<std::bitset<8>(report.height[1])<<endl;
-  //  cout<<height<<" "<< ((isMoving)? " ": "*MOVING*" )<<endl;
+*/
+  cout<<std::dec<<" height: "<<dec<<setprecision(2)<<fixed<<setw(5)<<height;
+
+  cout<<endl;
+
   return;
 }
 
@@ -287,11 +321,19 @@ int main (int argc,char **argv)
     }
   }
 
-  //getting status 100times
-  for(int i=0;i<100;i++)
+  //getting status 1000times
   {
-    linakGetStatus(udev);
-    sleep(1);
+    statusReport report;
+    std::time_t t = std::time(nullptr);
+    std::tm tm = *std::localtime(&t);
+
+    for(int i=0;i<1000;i++)
+    {
+      cout<<"["<<setw(4)<<i<<"/"<<1000<<"] ";
+      if(linakGetStatus(udev,report))
+      { printStatusReport(report); }
+      usleep(100000);
+    }
   }
 
   return 0;
