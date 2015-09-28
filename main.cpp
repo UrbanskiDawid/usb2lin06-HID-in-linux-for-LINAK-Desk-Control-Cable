@@ -203,7 +203,8 @@ void printStatusReport(const statusReport &report)
     case 0x0046: cout<<"B2"; break;
     case 0x000e: cout<<"B3"; break;
     case 0x000f: cout<<"B4"; break;
-    case 0x000d: cout<<"B5"; break;
+    case 0x000c: cout<<"B5"; break;
+    case 0x000d: cout<<"B6"; break;
     default:     cout<<"??"; break;
   }
 
