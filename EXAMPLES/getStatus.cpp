@@ -50,7 +50,7 @@ void printStatusReport(const usb2lin06::statusReport &report)
 {
   bool  isMoving= (report.moveIndicator!=0);
   bool  isBottom= (report.height[0]==0 && report.height[1]==0);
-  float height  = ((float)(int)report.height[0])/257 + (unsigned int)report.height[1];
+  float height  = usb2lin06::getHeight(report);
 
   cout<<hex<<setfill('0')
     <<" header:"<<setw(4)<<(int)report.header
@@ -186,13 +186,11 @@ int main (int argc,char **argv)
     if(ret<0)
     {
       fprintf(stderr,"Error to send control msg %d\n",ret);
-    }else{
-      buf[ret]='\0';
-      cout<<"OK '"<<buf<<"'"<<ret<<endl;
     }
   }
 
   //not 100% sure if this is needed
+  /*
   {
     int transferred = 0;
     ret= libusb_interrupt_transfer(udev, 0b10000001, buf, 127,&transferred,LIBUSB_DEFAULT_TIMEOUT);
@@ -204,6 +202,7 @@ int main (int argc,char **argv)
       cout<<"OK '"<<buf<<"'"<<ret<<endl;
     }
   }
+  */
 
   //getting status 1000times
   {

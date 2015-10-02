@@ -111,7 +111,7 @@ bool getStatus(libusb_device_handle* udev, statusReport &report)
      64,    //size (wLenght)
      3000   //timeout
      );
-  if(ret<0)
+  if(ret!=64)
   {
     fprintf(stderr,"fail to get status request err%d\n",ret);
     /* Broken pipe is EPIPE. That means the device sent a STALL to your control
@@ -132,6 +132,59 @@ bool getStatus(libusb_device_handle* udev, statusReport &report)
 
   memcpy(&report, buf, sizeof(report));
   return (report.header==0x3804);
+}
+
+
+
+bool moveDown(libusb_device_handle * udev, int timeout=1000)
+{
+  int ret=-1;
+  unsigned char buf[64];
+  const unsigned char down[] = { 0x05, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f };
+
+  memset (buf,0,sizeof(buf));
+  memcpy (buf,down,sizeof(down));
+
+  ret=libusb_control_transfer(
+    udev,
+    0x21,   //bmRequestType
+    0x09,   //bRequest
+    0x0305, //wValue
+    0,      //wIndex,
+    buf,64, //data, wLength
+    timeout
+  );
+  return (64==ret);
+}
+
+bool moveUp(libusb_device_handle * udev, int timeout=1000)
+{
+  int ret=-1;
+  unsigned char buf[64];
+  const unsigned char   up[] = { 0x05, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80 };
+
+  memset (buf,0,sizeof(buf));
+  memcpy (buf,up,sizeof(up));
+
+  ret=libusb_control_transfer(
+    udev,
+    0x21,   //bmRequestType
+    0x09,   //bRequest
+    0x0305, //wValue
+    0,      //wIndex,
+    buf,64, //data, wLength
+    timeout
+  );
+  return (64==ret);
+}
+
+
+/*
+ * this will return height form statusReport
+ */
+float getHeight(const statusReport &report)
+{
+  return ((float)(int)report.height[0])/257 + (unsigned int)report.height[1];
 }
 
 }
