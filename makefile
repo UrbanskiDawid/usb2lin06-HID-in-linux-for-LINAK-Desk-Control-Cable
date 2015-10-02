@@ -1,6 +1,6 @@
 CC=g++
 CFLAGS=-std=c++1y
-LFLAGS=-lusb
+LFLAGS=-lstdc++ -lusb-1.0
 OUT=usb2lin06-example
 
 all:
@@ -9,3 +9,5 @@ clean:
 	rm -f $(OUT)
 run:
 	sudo ./$(OUT)
+
+go: all run

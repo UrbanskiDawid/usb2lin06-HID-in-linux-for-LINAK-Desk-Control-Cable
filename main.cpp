@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <iostream>
-#include <usb.h> //apt-get install libusb-dev
+//#include <usb.h> //apt-get install libusb-dev
+#include <libusb-1.0/libusb.h>
 #include <iostream>
 #include <vector>
 #include <string>       // std::string
@@ -11,12 +12,19 @@
 #include <sys/types.h>
 #include <string.h> //memcpy
 #include <sstream>
-//source:
+
+
+#include <ctime>
+#include <iostream>
+#include <locale>
+
+//some sources
 //http://matthias.vallentin.net/blog/2007/04/writing-a-linux-kernel-driver-for-an-unknown-usb-device/
 //from: http://www.beyondlogic.org/usbnutshell/usb5.shtml
+//http://www.harshbutfair.org/software/example.c
 
-//libusb-0.1.12
-// http://castor.am.gdynia.pl/doc/libusb-0.1.12/html/functions.html
+//lubusb-1.0
+// http://libusb.sourceforge.net/api-1.0/
 //CONTROL URB https://www.safaribooksonline.com/library/view/linux-device-drivers/0596005903/ch13.html
 
 using namespace std;
@@ -50,46 +58,41 @@ struct statusReport//size:64B
 [ 6725.867488] usb 1-1.2: SerialNumber: Љ
 [ 6725.875451] hid-generic 0003:12D3:0002.0008: hiddev0,hidraw0: USB HID v1.11 Device [Linak DeskLine A/S USB Control Link] on usb-0000:00:1a.0-1.2/input0
 */
-static struct usb_device *find_usb2lin06()
+static struct libusb_device_handle *find_usb2lin06()
 {
-  uint16_t vendor = 0x12d3, product = 0x0002;
-  struct usb_bus *bus;
-  struct usb_device *dev;
-  struct usb_bus *busses;
-
-  usb_init();
-  usb_find_busses();
-  usb_find_devices();
-  busses = usb_get_busses();
-
-  for (bus = busses; bus; bus = bus->next)
-    for (dev = bus->devices; dev; dev = dev->next)
-      if ((dev->descriptor.idVendor == vendor) && (dev->descriptor.idProduct == product))
-        return dev;
-
-  return NULL;
+  const uint16_t
+    vendor = 0x12d3,
+    product = 0x0002;
+  return libusb_open_device_with_vid_pid(0, vendor,product);
 }
 
-void printDescriptor(const struct usb_device *dev)
+
+/*
+ * just some universal device descripor print out
+ */
+void printDescriptor(struct libusb_device_handle *udev)
 {
-  const struct usb_device_descriptor & des = dev->descriptor;
+  struct libusb_device * dev = libusb_get_device(udev);
+
+  struct libusb_device_descriptor des;
+  libusb_get_device_descriptor(dev,&des);
 
   struct keyName { std::string name; unsigned int value; std::string desc; };
   std::vector<keyName> data =
   {
-    {        "bLength",              des.bLength,		"Size of the Descriptor in Bytes (18 bytes)"},
-    {        "bDescriptorType",      des.bDescriptorType, "Constant        Device Descriptor (0x01)"},
-    {        "bcdUSB",               des.bcdUSB,          "USB Specification Number which device complies too."},
-    {        "bDeviceClass",         des.bDeviceClass,    "Class   Class Code (Assigned by USB Org)"},
-    {        "bDeviceSubClass",      des.bDeviceSubClass, "SubClass        Subclass Code (Assigned by USB Org)"},
-    {        "bDeviceProtocol",      des.bDeviceProtocol, "Protocol        Protocol Code (Assigned by USB Org)"},
-    {        "bMaxPacketSize0",      des.bMaxPacketSize0, "Number  Maximum Packet Size for Zero Endpoint."},
-    {        "idVendor",             des.idVendor,        "ID      Vendor ID (Assigned by USB Org)"},
-    {        "idProduct",            des.idProduct,       "ID      Product ID (Assigned by Manufacturer)"},
-    {        "bcdDevice",            des.bcdDevice,       "BCD     Device Release Number"},
-    {        "iManufacturer",        des.iManufacturer,   "Index   Index of Manufacturer String Descriptor"},
-    {        "iProduct",             des.iProduct,        "Index   Index of Product String Descriptor"},
-    {        "iSerialNumber",        des.iSerialNumber,   "Index   Index of Serial Number String Descriptor"},
+    {        "bLength",              des.bLength,            "Size of the Descriptor in Bytes (18 bytes)"},
+    {        "bDescriptorType",      des.bDescriptorType,    "Constant        Device Descriptor (0x01)"},
+    {        "bcdUSB",               des.bcdUSB,             "USB Specification Number which device complies too."},
+    {        "bDeviceClass",         des.bDeviceClass,       "Class   Class Code (Assigned by USB Org)"},
+    {        "bDeviceSubClass",      des.bDeviceSubClass,    "SubClass        Subclass Code (Assigned by USB Org)"},
+    {        "bDeviceProtocol",      des.bDeviceProtocol,    "Protocol        Protocol Code (Assigned by USB Org)"},
+    {        "bMaxPacketSize0",      des.bMaxPacketSize0,    "Number  Maximum Packet Size for Zero Endpoint."},
+    {        "idVendor",             des.idVendor,           "ID      Vendor ID (Assigned by USB Org)"},
+    {        "idProduct",            des.idProduct,          "ID      Product ID (Assigned by Manufacturer)"},
+    {        "bcdDevice",            des.bcdDevice,          "BCD     Device Release Number"},
+    {        "iManufacturer",        des.iManufacturer,      "Index   Index of Manufacturer String Descriptor"},
+    {        "iProduct",             des.iProduct,           "Index   Index of Product String Descriptor"},
+    {        "iSerialNumber",        des.iSerialNumber,      "Index   Index of Serial Number String Descriptor"},
     {        "bNumConfigurations: ", des.bNumConfigurations, "1       Integer Number of Possible Configurations"}
   };
 
@@ -101,6 +104,7 @@ void printDescriptor(const struct usb_device *dev)
       <<d.desc<<endl;
   }
 }
+
 
 /*
 Get currnet status from device
@@ -143,10 +147,10 @@ control responce data
  00000000 00000100 00111000 00010001 00001000 10101001 00001000 00000000 00000000 .8......
  00000000 00000100 00111000 00010001 00001000 01010010 00011001 00000000 00000000 .8..R...
 */
-bool linakGetStatus(usb_dev_handle* udev, statusReport &report)
+bool linakGetStatus(libusb_device_handle* udev, statusReport &report)
 {
-  char buf[64]; //CONTROL responce data
-  int ret = usb_control_msg(
+  unsigned char buf[64]; //CONTROL responce data
+  int ret = libusb_control_transfer(
      udev,
      0xa1,  //0b10100001 (mbRequest),
      1,     //request (bRequest)
@@ -224,21 +228,52 @@ void printStatusReport(const statusReport &report)
   return;
 }
 
+/*
+ * just an ugly way to get time in format HH:MM:SS:MS
+ */
+std::string getPreciseTime()
+{
+  std::ostringstream stm ;
+
+  std::time_t t = std::time(NULL);
+  timeval curTime;
+  gettimeofday(&curTime, NULL);
+  int milli = curTime.tv_usec / 1000;
+
+  char mbstr[100]; mbstr[0]='\0';
+  if (std::strftime(mbstr, sizeof(mbstr), "%0H:%0M:%0S", std::localtime(&t)))
+  {
+    stm << mbstr <<":"<<setfill('0')<<setw(3)<<milli;
+  }
+
+  return stm.str() ;
+}
+
+#define LIBUSB_DEFAULT_TIMEOUT 1000
 int main (int argc,char **argv)
 {
-  printf("Lets look for the Linak device...\n");
-  struct usb_device *dev;
-  usb_dev_handle* udev;
-
-  char buf[256];
+  libusb_device_handle* udev = NULL;
+  unsigned char buf[256];
   int ret=-1;
 
-  //find device
+  //init libusb
   {
-    dev = find_usb2lin06();
-    if(dev == NULL )
+    if(libusb_init(0)!=0)
     {
-      fprintf(stderr, "NO device");
+      fprintf(stderr, "Error failed to init libusb");
+      return 1;
+    }
+    libusb_set_debug(0,LIBUSB_LOG_LEVEL_WARNING);//and let usblib be verbose
+  }
+
+  //find and open device
+  {
+    printf("Lets look for the Linak device...\n");
+
+    udev = find_usb2lin06();
+    if(udev == NULL )
+    {
+      fprintf(stderr, "Error NO device");
       return 1;
     }
     printf("INFO: found device\n");
@@ -246,64 +281,48 @@ int main (int argc,char **argv)
 
   //print some device info
   {
-    printDescriptor(dev);
-
-    usb_set_debug(255);//and let usblib be verbose
-  }
-
-  //open device
-  {
-    udev=usb_open(dev);
-    if( udev == NULL )
-    {
-      fprintf(stderr,"fail to open device");
-      return 1;
-    }
-    std::cout<<"INFO: device open"<<std::endl;
+    printDescriptor(udev);
   }
 
   //read some data
   {
-    int ret;
-    char buf[256];
-
-    ret = usb_get_string_simple(udev, 1, buf, sizeof(buf));
-    if(ret<0)  { fprintf(stderr,"fail to read string1 err%d \n",ret);}
+    ret = libusb_get_string_descriptor_ascii(udev, 1, buf, sizeof(buf));
+    if(ret<0)  { fprintf(stderr,"Error to read string1 err%d \n",ret);}
     else       { cout<<"line 1: '"<<buf<<"'"<<endl; }
 
-    ret = usb_get_string_simple(udev, 2, buf, sizeof(buf));
-    if(ret<0)  { fprintf(stderr,"fail to read string2  err%d \n",ret);}
+    ret = libusb_get_string_descriptor_ascii(udev, 2, buf, sizeof(buf));
+    if(ret<0)  { fprintf(stderr,"Error to read string2  err%d \n",ret);}
     else       { cout<<"line 2: '"<<buf<<"'"<<endl; }
   }
 
   //claim device
   {
-    int interface = 0;
-    char *name[256];
-    if (usb_get_driver_np(udev, interface, (char *) name, sizeof(name)) == 0)
+    //Check whether a kernel driver is attached to interface #0. If so, we'll need to detach it.
+    if (libusb_kernel_driver_active(udev, 0))
     {
-      if (usb_detach_kernel_driver_np(udev, interface) < 0)
+      ret = libusb_detach_kernel_driver(udev, 0);
+      if (ret != 0)
       {
-        printf("%s\n", usb_strerror());
-        return -1;
+        fprintf(stderr, "Error detaching kernel driver. %d\n",ret);
+        return 1;
       }
-      usb_set_altinterface(udev, interface);
     }
 
-    ret = usb_claim_interface(udev,  interface);
-    if (ret < 0) {
-      printf("claim after set_configuration failed with error %d\n", ret);
-    }else{
-      cout<<"INFO: calimed interface"<<endl;
+    // Claim interface #0
+    ret = libusb_claim_interface(udev, 0);
+    if (ret != 0)
+    {
+      fprintf(stderr, "Error claiming interface. %d\n",ret);
+      return 1;
     }
   }
 
   //not 100% sure if this is needed
   {
-    ret=usb_control_msg(udev, 0b00100001, 0x0a,0x0000,0,buf,0,1000);
+    ret=libusb_control_transfer(udev, 0b00100001, 0x0a,0x0000,0,buf,0,LIBUSB_DEFAULT_TIMEOUT);
     if(ret<0)
     {
-      fprintf(stderr,"fail to send control msg %d\n",ret);
+      fprintf(stderr,"Error to send control msg %d\n",ret);
     }else{
       buf[ret]='\0';
       cout<<"OK '"<<buf<<"'"<<ret<<endl;
@@ -312,10 +331,11 @@ int main (int argc,char **argv)
 
   //not 100% sure if this is needed
   {
-    ret= usb_interrupt_write(udev, 0b10000001, buf, 127,1000);
+    int transferred = 0;
+    ret= libusb_interrupt_transfer(udev, 0b10000001, buf, 127,&transferred,LIBUSB_DEFAULT_TIMEOUT);
     if(ret<0)
     {
-      fprintf(stderr,"fail to send interrupt err%d\n",ret);
+      fprintf(stderr,"Error to send interrupt err%d\n",ret);
     }else{
       buf[ret]='\0';
       cout<<"OK '"<<buf<<"'"<<ret<<endl;
@@ -325,18 +345,25 @@ int main (int argc,char **argv)
   //getting status 1000times
   {
     statusReport report;
-    std::time_t t = std::time(nullptr);
-    std::tm tm = *std::localtime(&t);
 
-    for(int i=0;i<1000;i++)
+    for(unsigned int i=0;i<1000;i++)
     {
-      cout<<"["<<setw(4)<<i<<"/"<<1000<<"] ";
+      cout<<getPreciseTime()<<" ["<<setw(4)<<i<<"/"<<1000<<"] ";
+
       if(linakGetStatus(udev,report))
       { printStatusReport(report); }
+      else
+      { cout<<" Error "<<endl; }
+
       usleep(100000);
     }
   }
 
+  //cleanup
+  {
+    libusb_close(udev);
+    libusb_exit(0);
+  }
   return 0;
 }
 
