@@ -119,6 +119,18 @@ int main (int argc,char **argv)
   unsigned char buf[256];
   int ret=-1;
 
+  int COUNT = 10000;
+  if(argc==2)
+  {
+    COUNT=::atoi(argv[1]);
+    if(COUNT<0 || COUNT > 99999)
+    {
+      fprintf(stderr, "Error arg1 - remetitions must be an integer in range <0,99999>\n");
+      return -1;
+    }
+  }
+  cout<<"COUNT"<<COUNT<<endl;
+
   //init libusb
   {
     if(libusb_init(0)!=0)
@@ -180,37 +192,13 @@ int main (int argc,char **argv)
     }
   }
 
-  //not 100% sure if this is needed
-  {
-    ret=libusb_control_transfer(udev, 0b00100001, 0x0a,0x0000,0,buf,0,LIBUSB_DEFAULT_TIMEOUT);
-    if(ret<0)
-    {
-      fprintf(stderr,"Error to send control msg %d\n",ret);
-    }
-  }
-
-  //not 100% sure if this is needed
-  /*
-  {
-    int transferred = 0;
-    ret= libusb_interrupt_transfer(udev, 0b10000001, buf, 127,&transferred,LIBUSB_DEFAULT_TIMEOUT);
-    if(ret<0)
-    {
-      fprintf(stderr,"Error to send interrupt err%d\n",ret);
-    }else{
-      buf[ret]='\0';
-      cout<<"OK '"<<buf<<"'"<<ret<<endl;
-    }
-  }
-  */
-
   //getting status 1000times
   {
     usb2lin06::statusReport report;
-
-    for(unsigned int i=0;i<1000;i++)
+    std::string sCOUNT =  std::to_string(COUNT);
+    for(unsigned int i=1;i<=COUNT;i++)
     {
-      cout<<getPreciseTime()<<" ["<<setw(4)<<i<<"/"<<1000<<"] ";
+      cout<<getPreciseTime()<<" ["<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
 
       if(usb2lin06::getStatus(udev,report))
       { printStatusReport(report); }
