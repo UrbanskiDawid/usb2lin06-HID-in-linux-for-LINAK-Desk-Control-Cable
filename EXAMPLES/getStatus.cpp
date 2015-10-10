@@ -119,17 +119,36 @@ int main (int argc,char **argv)
   unsigned char buf[256];
   int ret=-1;
 
-  int COUNT = 10000;
-  if(argc==2)
+  int SETTINGS_COUNT = 1000;//how may times should i get status
+  unsigned int SETTINGS_CommadDelay = 1000000;//delay between sending commands [in mikro Sec]
+
+  //get args
   {
-    COUNT=::atoi(argv[1]);
-    if(COUNT<0 || COUNT > 99999)
+    if(argc>1)
     {
-      fprintf(stderr, "Error arg1 - remetitions must be an integer in range <0,99999>\n");
-      return -1;
+      SETTINGS_COUNT=::atoi(argv[1]);
+
+      if(SETTINGS_COUNT<0 || SETTINGS_COUNT > 99999)
+      {
+        fprintf(stderr, "Error arg1 - remetitions must be an integer in range <0,99999>\n");
+        return -1;
+      }
+    }
+
+    if(argc==3)
+    {
+      float delaySec = -9.9f;
+      delaySec=::atof(argv[2]);
+
+      if(delaySec<0.1f and delaySec>10.0f)
+      {
+        fprintf(stderr, "Error arg2 - time [sec] must get greater than 0.1 and less than 10 sec seconds\n");
+        return -1;
+      }
+
+      SETTINGS_CommadDelay = 1000000*delaySec;
     }
   }
-  cout<<"COUNT"<<COUNT<<endl;
 
   //init libusb
   {
@@ -192,20 +211,20 @@ int main (int argc,char **argv)
     }
   }
 
-  //getting status 1000times
+  //getting status SETTINGS_COUNT times
   {
     usb2lin06::statusReport report;
-    std::string sCOUNT =  std::to_string(COUNT);
-    for(unsigned int i=1;i<=COUNT;i++)
+    std::string sCOUNT =  std::to_string(SETTINGS_COUNT);
+    for(unsigned int i=1;i<=SETTINGS_COUNT;i++)
     {
-      cout<<getPreciseTime()<<" ["<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
+      cout<<getPreciseTime()<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
 
       if(usb2lin06::getStatus(udev,report))
       { printStatusReport(report); }
       else
       { cout<<" Error "<<endl; }
 
-      usleep(100000);
+      usleep(SETTINGS_CommadDelay);
     }
   }
 
