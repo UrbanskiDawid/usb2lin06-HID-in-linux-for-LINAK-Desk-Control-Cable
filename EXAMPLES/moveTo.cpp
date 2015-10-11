@@ -11,79 +11,47 @@ using namespace std;
 
 
 /*
- * get current height reported by device status
- */
-bool getCurrentHeight(libusb_device_handle* udev,unsigned int &h)
-{
-  h=0;
-  usb2lin06::statusReport report;
-
-  if(usb2lin06::getStatus(udev,report))
-  {
-     h=usb2lin06::getHeight(report);
-     return true;
-  }
-
-  return false;
-}
-
-/*
  * WARNING: dangerous
  * this will move towards goal
  * TODO: stop if cannot move
  */
-float moveTo(libusb_device_handle* udev,double target,unsigned int epsilon = 20)
+bool moveTo(  libusb_device_handle* udev, uint16_t target)
 {
-  double d=0.0f,           oldD=0.0f;
-  unsigned int curHeight=0,   oldHeight=666;
+  usb2lin06::statusReport r;
 
-  const unsigned int delay = 200000;
+  const unsigned int max_a = 3; unsigned int a = max_a;//stuck protection
+  uint16_t oldH=0;
 
-  const unsigned int leftMax=5;
-  unsigned int left=leftMax;
+  const int epsilon = 13;//this seems to be move prcision
 
-  bool success=false;
-
-  std::cout.precision(2);
-  std::cout.setf( std::ios::fixed, std::ios::floatfield ); // float field set to fixed
   while(true)
   {
-    if(!getCurrentHeight(udev,curHeight)) { fprintf(stderr,"Error get status\n"); break; }
+    usb2lin06::move(udev,target);
 
-    oldD = d;
-    d = (target-curHeight);//distance go target
+    usleep(200000);
 
-    cout<<endl<<"current height: "<<curHeight<<" distance: "<<d<<"+/-"<<epsilon<<" traveled: "<<(d-oldD)<<" ";
-
-    if( fabs(d) < epsilon )      { success=true; break; }//close enough
-
-    if(fabs(d-oldD)<epsilon) { left--; cout<<" bump (reason: "<<fabs(d-oldD)<<")"; if(left==0) { fprintf(stderr,"WARNING: stuck"); break; } }
-    else                     left=leftMax;
-
-    if(d * oldD<0)           { success=true; break; }//to far
-
-    usleep(delay);
-
-    if(d>0.0f)    { cout<<" moving up "; usb2lin06::moveUp  (udev);}
-    else
-    if(d<0.0f)    { cout<<" move down "; usb2lin06::moveDown(udev);}
-
-    if(fabs(d) < 500)
+    if( usb2lin06::getStatus(udev,r) )
     {
-      cout<<"woooo";
-      usleep(delay*1.6);
+      double distance = r.targetHeight-r.height;
+      double delta    = oldH-r.height;
+
+      if(fabs(distance)<=epsilon | fabs(delta) <=epsilon | oldH==r.height)
+        a--;
+      else
+        a=max_a;
+
+      cout
+        <<"current height: "<<dec<<setw(5)<<setfill(' ')<<r.height
+        <<" target height: "<<dec<<setw(5)<<setfill(' ')<<target
+        <<" distance:"<<dec<<setw(5)<<setfill(' ')<<distance
+      <<endl;
+
+      if(a==0) {break;}
+      oldH=r.height;
     }
-    else
-    usleep(delay);
   }//while
 
-  if(success)
-  {
-    cout<<" success destination reached "<<endl;
-  }//if
-
-  usb2lin06::moveEnd(udev);
-  return curHeight;
+  return ( fabs(r.height-target) <= epsilon);
 }
 
 void printHelp()
@@ -99,20 +67,18 @@ int main (int argc,char **argv)
   libusb_device_handle* udev = NULL;
   int ret=-1;
 
-  unsigned int target=0.0f;
+  int16_t targetHeight=-1;//target height to move, form arg1
 
   //get target heigh & print help
   {
-      if(argc==2)
-      {
-        target=::atoll(argv[1]);//long long
-      }
+    long long int tmp= atoll(argv[1]);
+    targetHeight=tmp;
 
-      if(argc!=2 || target<0 || target > 9999)
-      {
-          printHelp();
-          return -1;
-      }
+    if(argc!=2 || targetHeight<0 || tmp > (long long int)targetHeight)
+    {
+      printHelp();
+      return -1;
+    }
   }
 
   //init libusb
@@ -127,15 +93,12 @@ int main (int argc,char **argv)
 
   //find and open device
   {
-    printf("Lets look for the Linak device...\n");
-
     udev = usb2lin06::openDevice();
     if(udev == NULL )
     {
       fprintf(stderr, "Error NO device");
       return 1;
     }
-    printf("INFO: found device\n");
   }
 
   //claim device
@@ -160,18 +123,16 @@ int main (int argc,char **argv)
     }
   }
 
-  //get current height and move
+  //move to targetHeight
+  bool succes=false;
   {
-    unsigned int curHeight=0.0f;
-
-    if(!getCurrentHeight(udev,curHeight))
+    if( moveTo(udev,targetHeight) )
     {
-      fprintf(stderr,"Error getStatus\n");
-    }else{
-      cout<<"current height: "<<curHeight<<" target height: "<<target<<endl;
-
-      moveTo(udev,target);
+      cout<<"succes"<<endl;
+      succes=true;
     }
+    else
+      cout<<"failed"<<endl;
   }
 
   //cleanup
@@ -179,5 +140,6 @@ int main (int argc,char **argv)
     libusb_close(udev);
     libusb_exit(0);
   }
-  return 0;
+
+  return (succes ? 0 : -1);
 }

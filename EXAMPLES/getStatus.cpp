@@ -54,7 +54,7 @@ void printStatusReport(const usb2lin06::statusReport &report)
     <<" H:"<<setw(4)<<(int)report.height
     <<" moveDir:"<<setw(2)<<(int)report.moveDir
     <<" mi:"<<setw(2)<<(int)report.moveIndicator
-    <<" u3:"<<setw(2)<<(int)report.unknown3[0]<<setw(2)<<(int)report.unknown3[1]
+    <<" targetHeight:"<<setw(4)<<(int)report.targetHeight
     <<" u5:"<<setw(2)<<(int)report.unknown5[0]<<setw(2)<<(int)report.unknown5[1]<<setw(2)<<(int)report.unknown5[2]
     <<" key:"<<setw(4)<<(int)report.key
     <<" u8:"<<setw(2)<<(int)report.unknown8

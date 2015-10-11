@@ -83,7 +83,6 @@ int main (int argc,char **argv)
     {
       fprintf(stderr,"Error getStatus\n");
     }else{
-
       cout<<"current height: "<<setprecision(1)<<dec<<fixed<<curHeight<<"cm"<<endl;
     }
   }

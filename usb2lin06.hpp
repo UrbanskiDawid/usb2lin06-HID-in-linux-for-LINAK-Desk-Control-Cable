@@ -35,11 +35,11 @@ struct statusReport//size:64B
 {
   uint16_t header;       //[ 0, 1] 0x04, 0x38 constant
   uint16_t unknown1;     //[ 2, 3] 0x1108 << after movment (few seconds), 0x0000 afterwards, 0x0108 << while moving
-  uint16_t height;       //[ 4, 5] low,high 0x00 0x00 <<bottom
+  int16_t  height;       //[ 4, 5] low,high 0x00 0x00 <<bottom
   uint8_t  moveDir;      //[  6  ] 0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going down
   uint8_t  moveIndicator;//[  7  ] if != 0 them moving;
   uint8_t  unknown2[12]; //[ 8-19] zero ??
-  uint8_t  unknown3[2];  //[20,21] 0x01 0x80 ??
+  int16_t  targetHeight; //[20,21] 0x01 0x80 < if stopped
   uint8_t  unknown4[10]; //[22-31] zero ??
   uint8_t  unknown5[3];  //[32,34] 0x01 0x00 0x36 ??
   uint8_t  unknown6[7];  //[35,41] zero ??
@@ -131,22 +131,20 @@ bool getStatus(libusb_device_handle* udev, statusReport &report)
  * use: moveUp, moveDown, moveStop
  *
  * only 3 combinations are know:
- * DOWN:  05 ff  7f ff  7f ff  7f ff  7f	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- * UP  :  05 00  80 00  80 00  80 00  80	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- * END :  05 01  80 01  80 01  80 01  80	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ * DOWN:  05 ff 7f ff 7f ff 7f ff 7f	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ * UP  :  05 00 80 00 80 00 80 00 80	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ * END :  05 01 80 01 80 01 80 01 80	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  */
-inline bool _move(libusb_device_handle * udev, unsigned char a, unsigned char b, int timeout=1000)
+inline bool move(libusb_device_handle * udev, int16_t targetHeight, int timeout=1000)
 {
   unsigned char data[64];
   memset (data,0,sizeof(data));
 
-  const unsigned char header[] = {
-    0x05, b,
-    a,    b,
-    a,    b,
-    a,    b,
-    a };
-  memcpy (data,header,sizeof(header));
+  data[0]=0x05;
+  memcpy( data+1, &targetHeight, sizeof(targetHeight) );
+  memcpy( data+3, &targetHeight, sizeof(targetHeight) );
+  memcpy( data+5, &targetHeight, sizeof(targetHeight) );
+  memcpy( data+7, &targetHeight, sizeof(targetHeight) );
 
   int ret=libusb_control_transfer(
     udev,
@@ -154,7 +152,7 @@ inline bool _move(libusb_device_handle * udev, unsigned char a, unsigned char b,
     0x09,   //bRequest
     0x0305, //wValue-move
     0,      //wIndex,
-    data,64, //data, wLength
+    data,64,//data, wLength
     timeout
   );
   return (64==ret);
@@ -163,43 +161,31 @@ inline bool _move(libusb_device_handle * udev, unsigned char a, unsigned char b,
 /*
  * Move one step down
  * this will send:
- * 05 ff
- * 7f ff
- * 7f ff
- * 7f ff
- * 7f 00
+ * 05 ff 7f ff 7f ff 7f ff 7f 00
 */
 bool moveDown(libusb_device_handle * udev, int timeout=1000)
 {
-  return _move(udev,0x7f,0xff,timeout);
+  return move(udev,0x7fff,timeout);
 }
 
 /*
  * Move one step up
  * this will send:
- * 05 00
- * 80 00
- * 80 00
- * 80 00
- * 80 00
+ * 05 00 80 00 80 00 80 00 80 00
 */
 bool moveUp(libusb_device_handle * udev, int timeout=1000)
 {
-  return _move(udev,0x80,0x00,timeout);
+  return move(udev,0x8000,timeout);
 }
 
 /*
  * End Movment sequence
  * this will send:
- * 05 01
- * 80 01
- * 80 01
- * 80 01
- * 80 00
+ * 05 01 80 01 80 01 80 01 80 00
 */
 bool moveEnd(libusb_device_handle * udev, int timeout=1000)
 {
-  return _move(udev,0x80,0x01,timeout);
+  return move(udev,0x8001,timeout);
 }
 
 /*
