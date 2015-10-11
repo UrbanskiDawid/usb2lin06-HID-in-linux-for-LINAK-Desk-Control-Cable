@@ -218,5 +218,4 @@ float getHeightInCM(const statusReport &report)
   return (float)report.height/98.0f;
 }
 
-
 }

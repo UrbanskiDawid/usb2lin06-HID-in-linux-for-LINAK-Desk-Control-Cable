@@ -20,7 +20,7 @@ bool getCurrentHeight(libusb_device_handle* udev,float &h)
 
   if(usb2lin06::getStatus(udev,report))
   {
-     h=usb2lin06::getHeight(report);
+     h=usb2lin06::getHeightInCM(report);
      return true;
   }
 
@@ -46,15 +46,12 @@ int main (int argc,char **argv)
 
   //find and open device
   {
-    printf("Lets look for the Linak device...\n");
-
     udev = usb2lin06::openDevice();
     if(udev == NULL )
     {
       fprintf(stderr, "Error NO device");
       return 1;
     }
-    printf("INFO: found device\n");
   }
 
   //claim device
@@ -87,7 +84,7 @@ int main (int argc,char **argv)
       fprintf(stderr,"Error getStatus\n");
     }else{
 
-      cout<<"current height "<<curHeight<<endl;
+      cout<<"current height: "<<setprecision(1)<<dec<<fixed<<curHeight<<"cm"<<endl;
     }
   }
 
