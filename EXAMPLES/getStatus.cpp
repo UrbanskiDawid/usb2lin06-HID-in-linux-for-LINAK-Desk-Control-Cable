@@ -49,13 +49,13 @@ void printDescriptor(struct libusb_device_handle *udev)
 void printStatusReport(const usb2lin06::statusReport &report)
 {
   bool  isMoving= (report.moveIndicator!=0);
-  bool  isBottom= (report.height[0]==0 && report.height[1]==0);
+  bool  isBottom= (report.height==0);
   float height  = usb2lin06::getHeight(report);
 
   cout<<hex<<setfill('0')
     <<" header:"<<setw(4)<<(int)report.header
     <<" u1:"<<setw(4)<<(int)report.unknown1
-    <<" H:"<<setw(2)<<(int)report.height[0]<<setw(2)<<(int)report.height[1]
+    <<" H:"<<setw(4)<<(int)report.height
     <<" moveDir:"<<setw(2)<<(int)report.moveDir
     <<" mi:"<<setw(2)<<(int)report.moveIndicator
     <<" u3:"<<setw(2)<<(int)report.unknown3[0]<<setw(2)<<(int)report.unknown3[1]

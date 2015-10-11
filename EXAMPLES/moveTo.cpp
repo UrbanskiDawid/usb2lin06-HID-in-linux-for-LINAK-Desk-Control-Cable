@@ -13,9 +13,9 @@ using namespace std;
 /*
  * get current height reported by device status
  */
-bool getCurrentHeight(libusb_device_handle* udev,float &h)
+bool getCurrentHeight(libusb_device_handle* udev,unsigned int &h)
 {
-  h=-1.0f;
+  h=0;
   usb2lin06::statusReport report;
 
   if(usb2lin06::getStatus(udev,report))
@@ -32,55 +32,64 @@ bool getCurrentHeight(libusb_device_handle* udev,float &h)
  * this will move towards goal
  * TODO: stop if cannot move
  */
-float moveTo(libusb_device_handle* udev,float target)
+float moveTo(libusb_device_handle* udev,double target,unsigned int epsilon = 20)
 {
-  if(target<0.1f || target>100.0f) return -1;
+  double d=0.0f,           oldD=0.0f;
+  unsigned int curHeight=0,   oldHeight=666;
 
-  float d=0.0f,           oldD=0.0f,
-        curHeight=0.0f,   oldHeight=666.6f;
+  const unsigned int delay = 200000;
 
-  const float epsilon = 0.2f;
+  const unsigned int leftMax=5;
+  unsigned int left=leftMax;
 
-  const unsigned int delay = 150000;
+  bool success=false;
 
-  const int leftMax=5;
-  int left=leftMax;
-
-  std::cout.precision(1);
+  std::cout.precision(2);
+  std::cout.setf( std::ios::fixed, std::ios::floatfield ); // float field set to fixed
   while(true)
   {
-    if(!getCurrentHeight(udev,curHeight)) { fprintf(stderr,"Error get status\n"); return -1; }
-
-    cout<<"current height "<<std::fixed<<curHeight;
+    if(!getCurrentHeight(udev,curHeight)) { fprintf(stderr,"Error get status\n"); break; }
 
     oldD = d;
-    d = (target-curHeight);
+    d = (target-curHeight);//distance go target
 
-    if(fabs(d)<epsilon)      { break; }//close enough
+    cout<<endl<<"current height: "<<curHeight<<" distance: "<<d<<"+/-"<<epsilon<<" traveled: "<<(d-oldD)<<" ";
 
-    if(fabs(d-oldD)<epsilon) { left--; if(left==0) { fprintf(stderr,"WARNING: stuck"); return curHeight; } }
-    else                       left=leftMax;
+    if( fabs(d) < epsilon )      { success=true; break; }//close enough
 
-    if(d * oldD<0)           { break; }//to far
+    if(fabs(d-oldD)<epsilon) { left--; cout<<" bump (reason: "<<fabs(d-oldD)<<")"; if(left==0) { fprintf(stderr,"WARNING: stuck"); break; } }
+    else                     left=leftMax;
+
+    if(d * oldD<0)           { success=true; break; }//to far
 
     usleep(delay);
 
-    cout<<std::fixed<<"\tdelta "<<d<<"+/-"<<epsilon;
-
-    if(d>0.0f)    { cout<<" moving up"<<endl; usb2lin06::moveUp  (udev);}
+    if(d>0.0f)    { cout<<" moving up "; usb2lin06::moveUp  (udev);}
     else
-    if(d<0.0f)    { cout<<" move down"<<endl; usb2lin06::moveDown(udev);}
+    if(d<0.0f)    { cout<<" move down "; usb2lin06::moveDown(udev);}
 
+    if(fabs(d) < 500)
+    {
+      cout<<"woooo";
+      usleep(delay*1.6);
+    }
+    else
     usleep(delay);
-  }
+  }//while
 
-  cout<<" destination reached "<<endl;
+  if(success)
+  {
+    cout<<" success destination reached "<<endl;
+  }//if
+
+  usb2lin06::moveEnd(udev);
   return curHeight;
 }
 
 void printHelp()
 {
   cout<<"this will set height of your desk using usb2lin06"<<endl
+      <<"WARNING: this might be dangerous please make sure that you dont hit something!"<<endl
       <<"please start program with: arg1 (height)"<<endl;
 }
 
@@ -88,23 +97,22 @@ void printHelp()
 int main (int argc,char **argv)
 {
   libusb_device_handle* udev = NULL;
-  unsigned char buf[256];
   int ret=-1;
 
-  float target=0.0f;
+  unsigned int target=0.0f;
 
   //get target heigh & print help
   {
-      if(argc<2)
+      if(argc==2)
       {
-        printHelp();
-      }else{
-        target=::atof(argv[1]);
-        if(target<0.0 || target > 100.0f)
-        {
+        target=::atoll(argv[1]);//long long
+      }
+
+      if(argc!=2 || target<0 || target > 9999)
+      {
           printHelp();
-        }
-     }
+          return -1;
+      }
   }
 
   //init libusb
@@ -152,25 +160,16 @@ int main (int argc,char **argv)
     }
   }
 
-  //not 100% sure if this is needed
+  //get current height and move
   {
-    ret=libusb_control_transfer(udev, 0b00100001, 0x0a,0x0000,0,buf,0,LIBUSB_DEFAULT_TIMEOUT);
-    if(ret<0)
-    {
-      fprintf(stderr,"Error to send control msg %d\n",ret);
-    }
-  }
-
-  //getting status 1000times
-  {
-    float curHeight=0.0f;
+    unsigned int curHeight=0.0f;
 
     if(!getCurrentHeight(udev,curHeight))
     {
       fprintf(stderr,"Error getStatus\n");
     }else{
+      cout<<"current height: "<<curHeight<<" target height: "<<target<<endl;
 
-      cout<<"current height "<<curHeight<<endl;
       moveTo(udev,target);
     }
   }

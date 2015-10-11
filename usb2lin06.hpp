@@ -22,12 +22,21 @@
 namespace usb2lin06
 {
 
+/*
+ u1: 0x0000,0x1008, 0x1108,0x0100,0x1000
+  0x??08 < while starting to move, and afrer movment
+  0x??00 < when moving or when stoped
+
+  0x01??
+  0x10??
+  0x11??
+ */
 struct statusReport//size:64B
 {
-  uint16_t header;       //[ 0, 1] 0x04, 0x38, 0x11  [End of Transmission, 8, Device Control 1 (oft. XON)]
-  uint16_t unknown1;     //[ 2, 3] 0x11,0x08 << after movment (few seconds), 0x00,0x00 afterwards, 0x01,0x08 << while moving
-  uint8_t  height[2];    //[ 4, 5] low,high 0x00 0x00 <<bottom
-  uint8_t  moveDir;      //[  6  ] 0xe0 <<going down,0x10<< going up, 0xf0 starting going down
+  uint16_t header;       //[ 0, 1] 0x04, 0x38 constant
+  uint16_t unknown1;     //[ 2, 3] 0x1108 << after movment (few seconds), 0x0000 afterwards, 0x0108 << while moving
+  uint16_t height;       //[ 4, 5] low,high 0x00 0x00 <<bottom
+  uint8_t  moveDir;      //[  6  ] 0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going down
   uint8_t  moveIndicator;//[  7  ] if != 0 them moving;
   uint8_t  unknown2[12]; //[ 8-19] zero ??
   uint8_t  unknown3[2];  //[20,21] 0x01 0x80 ??
@@ -58,45 +67,28 @@ static struct libusb_device_handle *openDevice()
 }
 
 /*
-Get currnet status from device
+ * Get currnet status from device
+ * to get status we have to send a request.
+ * request is send using USB control transfer:
 
-URB_CONTROL IN
-URB_CONTROL,URB_LEN=64,endpoint 0x80,IN
+	(bmRequestType)  (bRequest)  (wValue 16b)   (wIndex) (wLength)
+	(1010 0001)      (0000 0001) (0x0304    )   (0)      (64)
 
-1. URB SUBMIT   ,DATA_LEN=0
-host -> device
-
-"Each request starts with a 8 byte long Setup Packet"
-bmRequestType
-  D7 Data Phase Transfer Direction
-  1 = Device to Host
-  D6..5 Type
-  01 = Class
-  D4..0 Recipient
-  00001 = Interface
-(bmRequestType)  (bRequest)  (wValue 16b)   (wIndex) (wLength)
-(1010 0001)      (0000 0001) (0x0304    )   (0)      (64)
-
-2. URB COMPLEATE,DATA_LEN=64
-device -> host
-control responce data
- 00000000 00000100 00111000 00000000 00000000 00000000 00000000 00000000 00000000 .8...... ???  <<error heiht ??
- 00000000 00000100 00111000 00010001 00001000 00000000 00000000 00000000 00000000 .8...... _min
- 00000000 00000100 00111000 00010001 00001000 00011010 00000000 00000000 00000000 .8...... _min2
- 00000000 00000100 00111000 00010001 00001000 00101111 00000000 00000000 00000000 .8../... _min3
- 00000000 00000100 00111000 00010001 01000001 00101111 00000000 00000000 00000000 (simulated++)
-                                    (-----------------) < wysokosc
-                                     00000000
-                                     00000001
-                                     00000002
-                                     00000000 00000003 etc
-                                       10*0    10*1      10*3    (jade!)    10*5
- (-------------------------)const
- 00000000 00000100 00111000 00010001 00001000 01101000 00000000 00000000 00000000 .8..h... min0
- 00000000 00000100 00111000 00010001 00001000 01000001 00000010 00000000 00000000 .8..A...
- 00000000 00000100 00111000 00010001 00001000 00000101 00000100 00000000 00000000 .8......
- 00000000 00000100 00111000 00010001 00001000 10101001 00001000 00000000 00000000 .8......
- 00000000 00000100 00111000 00010001 00001000 01010010 00011001 00000000 00000000 .8..R...
+        bmRequestType 1B "determine the direction of the request, type of request and designated recipien"
+          0b10100001
+	    D7 Data Phase Transfer Direction - 1 = Device to Host
+	    D6..5 Type                       - 01 = Class
+	    D4..0 Recipient                  - 00001 = Interface
+	bRequest 1B "determines the request being made"
+	  0b00000001
+	wValue 2B "parameter to be passed with the request"
+	  0x0304
+	wIndex 2B "parameter to be passed with the request"
+	  0x00
+	wLength 2B "number of bytes to be transferred"
+	  64
+ * anwswer to this contains 64B of data example:
+  04380000ee07000000000000000000000000000001800000000000000000000001001000000000000000ffff0000000000000000000000000000100000000000
 */
 bool getStatus(libusb_device_handle* udev, statusReport &report)
 {
@@ -134,57 +126,88 @@ bool getStatus(libusb_device_handle* udev, statusReport &report)
   return (report.header==0x3804);
 }
 
-
-
-bool moveDown(libusb_device_handle * udev, int timeout=1000)
+/*
+ * please dont use this function
+ * use: moveUp, moveDown, moveStop
+ *
+ * only 3 combinations are know:
+ * DOWN:  05 ff  7f ff  7f ff  7f ff  7f	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ * UP  :  05 00  80 00  80 00  80 00  80	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ * END :  05 01  80 01  80 01  80 01  80	00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ */
+inline bool _move(libusb_device_handle * udev, unsigned char a, unsigned char b, int timeout=1000)
 {
-  int ret=-1;
-  unsigned char buf[64];
-  const unsigned char down[] = { 0x05, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f };
+  unsigned char data[64];
+  memset (data,0,sizeof(data));
 
-  memset (buf,0,sizeof(buf));
-  memcpy (buf,down,sizeof(down));
+  const unsigned char header[] = {
+    0x05, b,
+    a,    b,
+    a,    b,
+    a,    b,
+    a };
+  memcpy (data,header,sizeof(header));
 
-  ret=libusb_control_transfer(
+  int ret=libusb_control_transfer(
     udev,
     0x21,   //bmRequestType
     0x09,   //bRequest
-    0x0305, //wValue
+    0x0305, //wValue-move
     0,      //wIndex,
-    buf,64, //data, wLength
+    data,64, //data, wLength
     timeout
   );
   return (64==ret);
 }
-
-bool moveUp(libusb_device_handle * udev, int timeout=1000)
-{
-  int ret=-1;
-  unsigned char buf[64];
-  const unsigned char   up[] = { 0x05, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80 };
-
-  memset (buf,0,sizeof(buf));
-  memcpy (buf,up,sizeof(up));
-
-  ret=libusb_control_transfer(
-    udev,
-    0x21,   //bmRequestType
-    0x09,   //bRequest
-    0x0305, //wValue
-    0,      //wIndex,
-    buf,64, //data, wLength
-    timeout
-  );
-  return (64==ret);
-}
-
 
 /*
- * this will return height form statusReport
- */
-float getHeight(const statusReport &report)
+ * Move one step down
+ * this will send:
+ * 05 ff
+ * 7f ff
+ * 7f ff
+ * 7f ff
+ * 7f 00
+*/
+bool moveDown(libusb_device_handle * udev, int timeout=1000)
 {
-  return ((float)(int)report.height[0])/257 + (unsigned int)report.height[1];
+  return _move(udev,0x7f,0xff,timeout);
+}
+
+/*
+ * Move one step up
+ * this will send:
+ * 05 00
+ * 80 00
+ * 80 00
+ * 80 00
+ * 80 00
+*/
+bool moveUp(libusb_device_handle * udev, int timeout=1000)
+{
+  return _move(udev,0x80,0x00,timeout);
+}
+
+/*
+ * End Movment sequence
+ * this will send:
+ * 05 01
+ * 80 01
+ * 80 01
+ * 80 01
+ * 80 00
+*/
+bool moveEnd(libusb_device_handle * udev, int timeout=1000)
+{
+  return _move(udev,0x80,0x01,timeout);
+}
+
+/*
+ * this will calculate height form statusReport
+ */
+unsigned int getHeight(const statusReport &report)
+{
+   return (unsigned int)report.height;
 }
 
 }
