@@ -207,7 +207,16 @@ bool moveEnd(libusb_device_handle * udev, int timeout=1000)
  */
 unsigned int getHeight(const statusReport &report)
 {
-   return (unsigned int)report.height;
+  return (unsigned int)report.height;
 }
+
+/*
+ * get height in centimeters, rough - precision: 1decimal points
+ */
+float getHeightInCM(const statusReport &report)
+{
+  return (float)report.height/98.0f;
+}
+
 
 }
