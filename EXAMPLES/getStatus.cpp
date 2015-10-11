@@ -55,6 +55,7 @@ void printStatusReport(const usb2lin06::statusReport &report)
   cout<<hex<<setfill('0')
     <<" header:"<<setw(4)<<(int)report.header
     <<" u1:"<<setw(4)<<(int)report.unknown1
+    <<" H:"<<setw(2)<<(int)report.height[0]<<setw(2)<<(int)report.height[1]
     <<" moveDir:"<<setw(2)<<(int)report.moveDir
     <<" mi:"<<setw(2)<<(int)report.moveIndicator
     <<" u3:"<<setw(2)<<(int)report.unknown3[0]<<setw(2)<<(int)report.unknown3[1]
@@ -122,8 +123,12 @@ int main (int argc,char **argv)
   int SETTINGS_COUNT = 1000;//how may times should i get status
   unsigned int SETTINGS_CommadDelay = 1000000;//delay between sending commands [in mikro Sec]
 
+  bool showInfo=true;
+
   //get args
   {
+    showInfo=(argc==1);
+
     if(argc>1)
     {
       SETTINGS_COUNT=::atoi(argv[1]);
@@ -162,7 +167,7 @@ int main (int argc,char **argv)
 
   //find and open device
   {
-    printf("Lets look for the Linak device...\n");
+    if(showInfo)    printf("Lets look for the Linak device...\n");
 
     udev = usb2lin06::openDevice();
     if(udev == NULL )
@@ -170,15 +175,16 @@ int main (int argc,char **argv)
       fprintf(stderr, "Error NO device");
       return 1;
     }
-    printf("INFO: found device\n");
+    if(showInfo)    printf("INFO: found device\n");
   }
 
   //print some device info
   {
-    printDescriptor(udev);
+    if(showInfo)    printDescriptor(udev);
   }
 
   //read some data
+  if(showInfo)
   {
     ret = libusb_get_string_descriptor_ascii(udev, 1, buf, sizeof(buf));
     if(ret<0)  { fprintf(stderr,"Error to read string1 err%d \n",ret);}
@@ -215,7 +221,8 @@ int main (int argc,char **argv)
   {
     usb2lin06::statusReport report;
     std::string sCOUNT =  std::to_string(SETTINGS_COUNT);
-    for(unsigned int i=1;i<=SETTINGS_COUNT;i++)
+
+    unsigned int i=1;   while(true)
     {
       cout<<getPreciseTime()<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
 
@@ -224,6 +231,7 @@ int main (int argc,char **argv)
       else
       { cout<<" Error "<<endl; }
 
+      if(i++==SETTINGS_COUNT) break;
       usleep(SETTINGS_CommadDelay);
     }
   }
