@@ -42,6 +42,11 @@ traces of working program are included
 $ modprobe usbmon
 ```
 
+### LSUSB
+```sh
+$ lsusb -v -d 12d3:0002
+```
+
 ### DONE:
 1. update libusb to current version
 2. add wireshark traces folder + descriptions
