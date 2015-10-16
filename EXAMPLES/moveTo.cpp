@@ -128,7 +128,7 @@ int main (int argc,char **argv)
   {
     if( moveTo(udev,targetHeight) )
     {
-      cout<<"succes"<<endl;
+      cout<<"success"<<endl;
       succes=true;
     }
     else
