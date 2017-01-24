@@ -1,10 +1,16 @@
 # usb2lin06-HID-in-linux-for-LINAK-Desk-Control-Cable
 
 This is a simple program for controlling LINAK Desk Control Cable in linux.
+Its created as linux alternative to: https://www.linak.com/products/controls.aspx?product=LINAK+Desk+Control+SW
 
 Tested on model: usb2lin06.
 
-this is using: libusb-1.0
+### Dependencies
+this is using: **libusb-1.0**
+>to intall libusb-1.0 (debian)
+```sh
+$ sudo apt-get install libusb-1.0-0-dev
+```
 
 ### Capabilities
 * setting height
@@ -13,7 +19,7 @@ this is using: libusb-1.0
 
 >to compile examples:
 ```sh
-$ make
+  $ make
 ```
 
 ### How to run examples
@@ -43,16 +49,10 @@ $ modprobe usbmon
 ```
 
 ### LSUSB
+> to see if you have your device connected:
 ```sh
 $ lsusb -v -d 12d3:0002
 ```
 
-### DONE:
-1. update libusb to current version
-2. add wireshark traces folder + descriptions
-3. trigger moment up
-   up, down
-4. example program to set desk height
-
 ### TODO:
-5. anazyze how save/restore position works
+anazyze how save/restore position works
