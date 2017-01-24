@@ -36,5 +36,12 @@ struct sCtrlURB
   uint16_t wLength;
 };
 
-const struct sCtrlURB URB_getStatus = { 0xa1,   1,0x0304,0,64};
-const struct sCtrlURB URB_move      = { 0x21,0x09,0x0305,0,64};
+#define URB_wValue_Init      0x0303
+#define URB_wValue_GetStatus 0x0304
+#define URB_wValue_Move      0x0305
+
+
+const struct sCtrlURB URB_init      = { 0x21, 9/*HID_REPORT_SET*/, URB_wValue_Init,      0, 64};
+const struct sCtrlURB URB_getStatus = { 0xA1, 1/*HID_REPORT_GET*/, URB_wValue_GetStatus, 0, 64};
+const struct sCtrlURB URB_move      = { 0x21, 9/*HID_REPORT_SET*/, URB_wValue_Move,      0, 64};
+

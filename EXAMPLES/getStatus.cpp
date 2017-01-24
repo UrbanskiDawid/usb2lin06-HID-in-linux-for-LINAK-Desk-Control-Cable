@@ -166,7 +166,7 @@ int main (int argc,char **argv)
   {
     if(showInfo)    printf("Lets look for the Linak device...\n");
 
-    udev = usb2lin06::openDevice();
+    udev = usb2lin06::openDevice(false);
     if(udev == NULL )
     {
       fprintf(stderr, "Error NO device");
@@ -192,25 +192,19 @@ int main (int argc,char **argv)
     else       { cout<<"line 2: '"<<buf<<"'"<<endl; }
   }
 
-  //claim device
+  //check if device it ready
   {
-    //Check whether a kernel driver is attached to interface #0. If so, we'll need to detach it.
-    if (libusb_kernel_driver_active(udev, 0))
+    usb2lin06::statusReport report;
+    if(!usb2lin06::getStatusReport(udev,report))
     {
-      ret = libusb_detach_kernel_driver(udev, 0);
-      if (ret != 0)
-      {
-        fprintf(stderr, "Error detaching kernel driver. %d\n",ret);
+      cout<<" Error: cant get initial status";
+    }else{
+      if(usb2lin06::isStatusReportNotReady(report)){
+        cout<<" device is not ready"<<endl;
         return 1;
+      }else{
+        cout<<" device is ready"<<endl;
       }
-    }
-
-    // Claim interface #0
-    ret = libusb_claim_interface(udev, 0);
-    if (ret != 0)
-    {
-      fprintf(stderr, "Error claiming interface. %d\n",ret);
-      return 1;
     }
   }
 
@@ -223,7 +217,7 @@ int main (int argc,char **argv)
     {
       cout<<getPreciseTime()<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
 
-      if(usb2lin06::getStatus(udev,report))
+      if(usb2lin06::getStatusReport(udev,report))
       { printStatusReport(report); }
       else
       { cout<<" Error "<<endl; }

@@ -30,7 +30,7 @@ bool moveTo(  libusb_device_handle* udev, uint16_t target)
 
     usleep(200000);
 
-    if( usb2lin06::getStatus(udev,r) )
+    if( usb2lin06::getStatusReport(udev,r) )
     {
       double distance = r.targetHeight-r.height;
       double delta    = oldH-r.height;
@@ -97,28 +97,6 @@ int main (int argc,char **argv)
     if(udev == NULL )
     {
       fprintf(stderr, "Error NO device");
-      return 1;
-    }
-  }
-
-  //claim device
-  {
-    //Check whether a kernel driver is attached to interface #0. If so, we'll need to detach it.
-    if (libusb_kernel_driver_active(udev, 0))
-    {
-      ret = libusb_detach_kernel_driver(udev, 0);
-      if (ret != 0)
-      {
-        fprintf(stderr, "Error detaching kernel driver. %d\n",ret);
-        return 1;
-      }
-    }
-
-    // Claim interface #0
-    ret = libusb_claim_interface(udev, 0);
-    if (ret != 0)
-    {
-      fprintf(stderr, "Error claiming interface. %d\n",ret);
       return 1;
     }
   }
