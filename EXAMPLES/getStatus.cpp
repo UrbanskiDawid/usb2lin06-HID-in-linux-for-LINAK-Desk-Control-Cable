@@ -50,21 +50,21 @@ void printStatusReport(const usb2lin06::statusReport &report)
 {
   const uint16_t vF = *reinterpret_cast<const uint16_t*>(&report.validFlag);
 
-  cout<<hex<<setfill('0')
-    <<" header:"<<setw(4)<<(int)report.header
-    <<" u1:"<<setw(4)<<(int)report.numberOfBytes
-    <<" vF:"<<setw(16)<< std::bitset<16>(vF)
-    <<" H:"<<setw(4)<<(int)report.height
-    <<" moveDir:"<<setw(2)<<(int)report.moveDir
-    <<" mi:"<<setw(2)<<(int)report.moveIndicator
-    <<" targetHeight:"<<setw(4)<<(int)report.targetHeight
-    <<" u5:"<<setw(2)<<(int)report.unknown5[0]<<setw(2)<<(int)report.unknown5[1]<<setw(2)<<(int)report.unknown5[2]
-    <<" key:"<<setw(4)<<(int)report.key
-    <<" u8:"<<setw(2)<<(int)report.unknown8
-  <<"\t";
+  auto printRef = [](const usb2lin06::RefPosStatSpeed &r){
+     cout<<setw(4)<<r.pos;
+     switch(r.status)
+     {
+       case 0xf0:
+       case 0xe0: cout<<" DOWN "; break;
+       case 0x10: cout<<"  UP  "; break;
+       case 0x00: cout<<" STOP "; break;
+     }
+     cout<<setw(4)<<r.speed;
+  };
 
-  switch(report.key)
-  {
+  auto printHandset = [](const uint16_t &h){
+    switch(h)
+    {
     case 0xffff: cout<<"--"; break;
     case 0x0047: cout<<"B1"; break;
     case 0x0046: cout<<"B2"; break;
@@ -73,17 +73,37 @@ void printStatusReport(const usb2lin06::statusReport &report)
     case 0x000c: cout<<"B5"; break;
     case 0x000d: cout<<"B6"; break;
     default:     cout<<"??"; break;
-  }
+    }
+  };
 
-  switch(report.moveDir)
-  {
-    case 0xf0:
-    case 0xe0: cout<<" DOWN "; break;
-    case 0x10: cout<<"  UP  "; break;
-    case 0x00: cout<<" STOP "; break;
-  }
+  auto printControl= [](const usb2lin06::RefControlInput& c){
+    cout<<setw(4)<<std::bitset<16>(c);
+  };
 
-  cout<<" height: "<<fixed<<setfill(' ')<<setprecision(1)
+  cout<<hex<<setfill('0');
+  cout<<" header:"<<setw(4)<<(int)report.header;
+  cout<<" bytes:"<<setw(4)<<(int)report.numberOfBytes;
+  cout<<" vF:"<<setw(16)<< std::bitset<16>(vF);
+
+  printRef(report.ref1);
+  printRef(report.ref2);
+  printRef(report.ref3);
+  printRef(report.ref4);
+  printControl(report.ref1cnt);
+  printControl(report.ref2cnt);
+  printControl(report.ref3cnt);
+  printControl(report.ref4cnt);
+  printRef(report.ref5);
+  //diagnostic[8]
+  //undefined1[2]
+  printHandset(report.handset1);
+  printHandset(report.handset2);
+  printRef(report.ref6);
+  printRef(report.ref7);
+  printRef(report.ref8);
+  //undefined2[]
+
+  cout<<"\t height: "<<fixed<<setfill(' ')<<setprecision(1)
       <<dec<<setw(5)<< usb2lin06::getHeight(report)
       <<" = "
       <<dec<<setw(5)<< usb2lin06::getHeightInCM(report) <<"cm"
@@ -113,7 +133,6 @@ std::string getPreciseTime()
   return stm.str() ;
 }
 
-#define LIBUSB_DEFAULT_TIMEOUT 1000
 int main (int argc,char **argv)
 {
   libusb_device_handle* udev = NULL;

@@ -105,9 +105,9 @@ bool isStatusReportNotReady(const statusReport &report) {
 
   char report_bytes[StatusReportSize];
   memcpy(&report_bytes, &report, sizeof(report));
-  if(report_bytes[0] != 0x04
+  if(report_bytes[0] != StatusReport_ID
      ||
-     report_bytes[1] != 0x38) {
+     report_bytes[1] != StatusReport_nrOfBytes) {
     return false; //THIS IS NOT A valid status report!
   }
 
@@ -304,9 +304,9 @@ bool moveEnd(libusb_device_handle * udev, int timeout)
 /*
  * this will calculate height form statusReport
  */
-HEIGHT_type getHeight(const statusReport &report)
+int getHeight(const statusReport &report)
 {
-  return (HEIGHT_type)report.height;
+  return (int)report.ref1.pos;
 }
 
 /*
@@ -314,7 +314,7 @@ HEIGHT_type getHeight(const statusReport &report)
  */
 float getHeightInCM(const statusReport &report)
 {
-  return (float)report.height/98.0f;
+  return (float)report.ref1.pos/98.0f;
 }
 
 }

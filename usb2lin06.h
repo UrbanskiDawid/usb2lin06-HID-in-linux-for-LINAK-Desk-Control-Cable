@@ -2,7 +2,7 @@
  *
  * Autor: Dawid Urbanski
  * email: git@dawidurbanski.pl
- * Dawid: 2 october 2015
+ * Dawid: 25 marzec 2017
  *
  */
 #ifndef usb2lin06_h
@@ -10,7 +10,6 @@
 
 #define VENDOR  0x12d3
 #define PRODUCT 0x0002
-
 
 struct LINIDvalidFlag
 {
@@ -40,26 +39,40 @@ struct LINIDvalidFlag
 };
 static_assert(sizeof(LINIDvalidFlag)==sizeof(uint16_t),"wrong size of LINIDvalidFlag (must be 16bit)");
 
+typedef int16_t RefControlInput;
+
+struct RefPosStatSpeed
+{
+  RefControlInput pos;   //HEIGHT low,high 0x00 0x00 <<bottom
+  uint8_t         status;//0x00 <<stop,0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going down
+  uint8_t         speed; //if != 0 them moving;
+};
+
 #define StatusReport_ID 0x4
 #define StatusReport_nrOfBytes 0x38
 #define StatusReportSize 64
-struct statusReport//size:64B
+struct statusReport
 {
   uint8_t header;           //[ 0 ] 0x04(CurrentStatusReport),
   uint8_t numberOfBytes;    //[ 1 ] 0x38(CurrentStatusReport)
   LINIDvalidFlag validFlag; //[ 2, 3] 0x1108 << after movment (few seconds), 0x0000 afterwards, 0x0108 << while moving
-  int16_t  height;          //[ 4, 5] low,high 0x00 0x00 <<bottom
-  uint8_t  moveDir;         //[  6  ] 0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going down
-  uint8_t  moveIndicator;   //[  7  ] if != 0 them moving;
-  uint8_t  unknown2[12];    //[ 8-19] zero ??
-  int16_t  targetHeight;    //[20,21] 0x01 0x80 < if stopped
-  uint8_t  unknown4[10];    //[22-31] zero ??
-  uint8_t  unknown5[3];     //[32,34] 0x01 0x00 0x36 ??
-  uint8_t  unknown6[7];     //[35,41] zero ??
-  uint16_t key;             //[42,43] button pressed down
-  uint8_t  unknown7[14];    //[44-57]no work was done
-  uint8_t  unknown8;        //[  58 ] 0x10/0x08 ??
-  uint8_t  unknown9[4];     //[59-63] zero ??
+  RefPosStatSpeed ref1;     //[ 4, 5, 6, 7] pos,status,speed
+  RefPosStatSpeed ref2;     //[ 8, 9,10,11] pos,status,speed
+  RefPosStatSpeed ref3;     //[12,13,14,15] pos,status,speed
+  RefPosStatSpeed ref4;     //[16,17,18,19] pos,status,speed
+  RefControlInput ref1cnt;  //[20,21] target height
+  RefControlInput ref2cnt;  //[22,23] target height
+  RefControlInput ref3cnt;  //[24,25] target height
+  RefControlInput ref4cnt;  //[26,27] target height
+  RefPosStatSpeed ref5;     //[28,29,30,31] pos,status,speed
+  uint8_t diagnostic[8];    //[32,33,34,35,36,37,38,39]
+  uint8_t undefined1[2];    //[40,41]
+  uint16_t handset1;        //[42,43] buttons
+  uint16_t handset2;        //[44,45] buttons
+  RefPosStatSpeed ref6;     //[46-49] pos,status,speed
+  RefPosStatSpeed ref7;     //[50-53] pos,status,speed
+  RefPosStatSpeed ref8;     //[54-57] pos,status,speed
+  uint8_t undefined2[6];    //[58-63]
 };
 static_assert(sizeof(statusReport)==StatusReportSize,"wrong size of statusReport");
 
@@ -91,7 +104,6 @@ void printLibStrErr(int errID);
 //height - is a 16 signed integer with the height in 1/10 mm with 0 as lowest height of actuators together with 8 bit status information
 //TODO: veryfy type: signed/unsigned
 //TODO: ?8 bit status information?
-#define HEIGHT_type uint16_t
 #define HEIGHT_moveDownwards 0x7fff
 #define HEIGHT_moveUpwards   0x8000
 #define HEIGHT_moveEnd       0x8001
@@ -104,7 +116,7 @@ bool initDevice(libusb_device_handle* udev);
 
 bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeout=DefaultUSBtimeoutMS);
 bool isStatusReportNotReady(const statusReport &report);
-HEIGHT_type getHeight(const statusReport &report);
+int   getHeight(const statusReport &report);
 float getHeightInCM(const statusReport &report);
 
 bool move    (libusb_device_handle * udev, int16_t targetHeight, int timeout=DefaultUSBtimeoutMS);

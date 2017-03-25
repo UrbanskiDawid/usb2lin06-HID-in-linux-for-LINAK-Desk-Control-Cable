@@ -32,26 +32,26 @@ bool moveTo(  libusb_device_handle* udev, uint16_t target)
 
     if( usb2lin06::getStatusReport(udev,r) )
     {
-      double distance = r.targetHeight-r.height;
-      double delta    = oldH-r.height;
+      double distance = r.ref1cnt-r.ref1.pos;
+      double delta    = oldH-r.ref1.pos;
 
-      if(fabs(distance)<=epsilon | fabs(delta) <=epsilon | oldH==r.height)
+      if(fabs(distance)<=epsilon | fabs(delta) <=epsilon | oldH==r.ref1.pos)
         a--;
       else
         a=max_a;
 
       cout
-        <<"current height: "<<dec<<setw(5)<<setfill(' ')<<r.height
+        <<"current height: "<<dec<<setw(5)<<setfill(' ')<<r.ref1.pos
         <<" target height: "<<dec<<setw(5)<<setfill(' ')<<target
         <<" distance:"<<dec<<setw(5)<<setfill(' ')<<distance
       <<endl;
 
       if(a==0) {break;}
-      oldH=r.height;
+      oldH=r.ref1.pos;
     }
   }//while
 
-  return ( fabs(r.height-target) <= epsilon);
+  return ( fabs(r.ref1.pos-target) <= epsilon);
 }
 
 void printHelp()
