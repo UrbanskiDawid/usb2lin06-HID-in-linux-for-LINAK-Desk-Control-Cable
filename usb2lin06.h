@@ -45,21 +45,21 @@ static_assert(sizeof(LINIDvalidFlag)==sizeof(uint16_t),"wrong size of LINIDvalid
 #define StatusReportSize 64
 struct statusReport//size:64B
 {
-  uint8_t header;        //[ 0 ] 0x04(CurrentStatusReport)
-  uint8_t numberOfBytes; //[ 1 ] 0x38(StatusReport_nrOfBytes)
-  uint16_t unknown1;     //[ 2, 3] 0x1108 << after movment (few seconds), 0x0000 afterwards, 0x0108 << while moving
-  int16_t  height;       //[ 4, 5] low,high 0x00 0x00 <<bottom
-  uint8_t  moveDir;      //[  6  ] 0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going down
-  uint8_t  moveIndicator;//[  7  ] if != 0 them moving;
-  uint8_t  unknown2[12]; //[ 8-19] zero ??
-  int16_t  targetHeight; //[20,21] 0x01 0x80 < if stopped
-  uint8_t  unknown4[10]; //[22-31] zero ??
-  uint8_t  unknown5[3];  //[32,34] 0x01 0x00 0x36 ??
-  uint8_t  unknown6[7];  //[35,41] zero ??
-  uint16_t key;          //[42,43] button pressed down
-  uint8_t  unknown7[14]; //[44-57]no work was done
-  uint8_t  unknown8;     //[  58 ] 0x10/0x08 ??
-  uint8_t  unknown9[4];  //[59-63] zero ??
+  uint8_t header;           //[ 0 ] 0x04(CurrentStatusReport),
+  uint8_t numberOfBytes;    //[ 1 ] 0x38(CurrentStatusReport)
+  LINIDvalidFlag validFlag; //[ 2, 3] 0x1108 << after movment (few seconds), 0x0000 afterwards, 0x0108 << while moving
+  int16_t  height;          //[ 4, 5] low,high 0x00 0x00 <<bottom
+  uint8_t  moveDir;         //[  6  ] 0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going down
+  uint8_t  moveIndicator;   //[  7  ] if != 0 them moving;
+  uint8_t  unknown2[12];    //[ 8-19] zero ??
+  int16_t  targetHeight;    //[20,21] 0x01 0x80 < if stopped
+  uint8_t  unknown4[10];    //[22-31] zero ??
+  uint8_t  unknown5[3];     //[32,34] 0x01 0x00 0x36 ??
+  uint8_t  unknown6[7];     //[35,41] zero ??
+  uint16_t key;             //[42,43] button pressed down
+  uint8_t  unknown7[14];    //[44-57]no work was done
+  uint8_t  unknown8;        //[  58 ] 0x10/0x08 ??
+  uint8_t  unknown9[4];     //[59-63] zero ??
 };
 static_assert(sizeof(statusReport)==StatusReportSize,"wrong size of statusReport");
 

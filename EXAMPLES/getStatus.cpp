@@ -48,9 +48,12 @@ void printDescriptor(struct libusb_device_handle *udev)
 
 void printStatusReport(const usb2lin06::statusReport &report)
 {
+  const uint16_t vF = *reinterpret_cast<const uint16_t*>(&report.validFlag);
+
   cout<<hex<<setfill('0')
     <<" header:"<<setw(4)<<(int)report.header
-    <<" u1:"<<setw(4)<<(int)report.unknown1
+    <<" u1:"<<setw(4)<<(int)report.numberOfBytes
+    <<" vF:"<<setw(16)<< std::bitset<16>(vF)
     <<" H:"<<setw(4)<<(int)report.height
     <<" moveDir:"<<setw(2)<<(int)report.moveDir
     <<" mi:"<<setw(2)<<(int)report.moveIndicator
