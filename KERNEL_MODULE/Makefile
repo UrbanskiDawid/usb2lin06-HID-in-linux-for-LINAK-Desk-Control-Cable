@@ -1,7 +1,18 @@
 MODULE_NAME=usb2lin06
 obj-m += $(MODULE_NAME).o
 
-all:
+default:
+	@echo this is Kernel Module Makefile
+	@echo please use:
+	@echo *build - to compile
+	@echo *clean - to clean after build
+	@echo *start - to insert module
+	@echo *stop  - to remove module
+	@echo *info  - to get check if module was inserted
+	@echo *test  - to test mobule by sending 4000 as target height
+check:
+	@if [ ! -d /lib/modules/$(shell uname -r)/build ]; then echo "ERROR: linux headers are missing.\nPlease install: $ sudo apt-get install linux-headers"; exit 1; fi
+build:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules -lusb
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
