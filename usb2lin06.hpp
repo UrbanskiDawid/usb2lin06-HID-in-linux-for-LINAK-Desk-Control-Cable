@@ -27,11 +27,11 @@ void printLibStrErr(int errID)
 {
   switch(errID)
   {
-    case LIBUSB_ERROR_TIMEOUT: fprintf(stderr,"ERROR the transfer timed out (and populates transferred)"); break;
-    case LIBUSB_ERROR_PIPE:    fprintf(stderr,"the endpoint halted"); break;
-    case LIBUSB_ERROR_OVERFLOW: fprintf(stderr,"the device offered more data, see Packets and overflows"); break;
+    case LIBUSB_ERROR_TIMEOUT:   fprintf(stderr,"ERROR the transfer timed out (and populates transferred)"); break;
+    case LIBUSB_ERROR_PIPE:      fprintf(stderr,"the endpoint halted"); break;
+    case LIBUSB_ERROR_OVERFLOW:  fprintf(stderr,"the device offered more data, see Packets and overflows"); break;
     case LIBUSB_ERROR_NO_DEVICE: fprintf(stderr,"the device has been disconnected"); break;
-    default: fprintf(stderr,"another LIBUSB_ERROR code on other failures %d",errID);
+    default:                     fprintf(stderr,"another LIBUSB_ERROR code on other failures %d",errID);
   }
 }
 
@@ -59,9 +59,9 @@ void printLibStrErr(int errID)
  * anwswer to this contains 64B of data example:
   04380000ee07000000000000000000000000000001800000000000000000000001001000000000000000ffff0000000000000000000000000000100000000000
 */
-bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeout=1000)
+bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeout)
 {
-  unsigned char buf[64]; //CONTROL responce data
+  unsigned char buf[StatusReportSize]; //CONTROL responce data
   int ret = libusb_control_transfer(
      udev,
      URB_getStatus.bmRequestType,//0b10100001
@@ -72,9 +72,9 @@ bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeo
      URB_getStatus.wLength,
      timeout
      );
-  if(ret!=64)
+  if(ret!=StatusReportSize)
   {
-    fprintf(stderr,"fail to get status request err %d!=64\n",ret);
+    fprintf(stderr,"fail to get status request err %d!=%d\n",ret,StatusReportSize);
     printLibStrErr(ret);
     /* Broken pipe is EPIPE. That means the device sent a STALL to your control
     message. If you don't know what a STALL is, check the USB specs.
@@ -87,13 +87,13 @@ bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeo
   }
 
   //Debug Print Binary
-  //for(int i=0;i<64;i++) {    cout<<std::bitset<8>(buf[i])<<" "; }
+  //for(int i=0;i<StatusReportSize;i++) {    cout<<std::bitset<8>(buf[i])<<" "; }
 
   //Debug Print Hex
-  //for(int i=0;i<64;i++) {    cout<<setw(2)<<setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";} cout<<endl;
+  //for(int i=0;i<StatusReportSize;i++) {    cout<<setw(2)<<setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";} cout<<endl;
 
   memcpy(&report, buf, sizeof(report));
-  return (report.header==0x3804);
+  return (report.header==StatusReport_ID && report.numberOfBytes==StatusReport_nrOfBytes);
 }
 
 /*
@@ -103,7 +103,7 @@ bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeo
 */
 bool isStatusReportNotReady(const statusReport &report) {
 
-  char report_bytes[64];
+  char report_bytes[StatusReportSize];
   memcpy(&report_bytes, &report, sizeof(report));
   if(report_bytes[0] != 0x04
      ||
@@ -111,7 +111,7 @@ bool isStatusReportNotReady(const statusReport &report) {
     return false; //THIS IS NOT A valid status report!
   }
 
-  for(int i=2;i<64;i++)
+  for(int i=2;i<StatusReportSize;i++)
   {
     if(report_bytes[i]!=0) return false;
   }
@@ -119,28 +119,23 @@ bool isStatusReportNotReady(const statusReport &report) {
   return true;
 }
 
-bool moveEnd(libusb_device_handle * udev, int timeout=1000);
-
-
 /*
  * init device, after poweron the device is not ready to work @see isStatusReportNotReady
  * this is the initial procedure. It has to be run once after device is powered on
  */
-void initDevice(libusb_device_handle* udev)
+bool initDevice(libusb_device_handle* udev)
 {
-  if(udev == NULL ) return;
-
-  int timeout = 1000;
+  if(udev == NULL ) return false;
 
   //  USBHID 128b SET_REPORT Request bmRequestType 0x21 bRequest 0x09 wValue 0x0303 wIndex 0 wLength 64
   //  03 04 00 fb 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   {
-    unsigned char buf[64];
-    memset(buf, 0, 64);
-    buf[0]=0x03;
-    buf[1]=0x04;
-    buf[2]=0x00;
-    buf[3]=0xfb;
+    unsigned char buf[StatusReportSize];
+    memset(buf, 0, StatusReportSize);
+    buf[0]=USB2LIN_modeOfOperation_featureReportID; //0x03 Feature report ID = 3
+    buf[1]=USB2LIN_ModeOfOperation_default;         //0x04 mode of operation
+    buf[2]=0x00;                                    //?
+    buf[3]=0xfb;                                    //?
 
     int ret = libusb_control_transfer(
       udev,
@@ -149,13 +144,14 @@ void initDevice(libusb_device_handle* udev)
       0x0303,//Feature3, ReportID: 3
       0,
       buf,
-      64,
-      timeout
+      StatusReportSize,
+      DefaultUSBtimeoutMS
       );
-    if(ret!=64)
+    if(ret!=StatusReportSize)
     {
       fprintf(stderr,"device not ready - initializing failed on step1 ret=%d",ret);
       printLibStrErr(ret);
+      return false;
     }
   }
 
@@ -164,11 +160,16 @@ void initDevice(libusb_device_handle* udev)
   // USBHID 128b SET_REPORT Request bmRequestType 0x21 bRequest 0x09 wValue 0x0305 wIndex 0 wLength 64
   //  05 0180 0180 0180 0180 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   {
-    if(!moveEnd(udev)) fprintf(stderr,"device not ready - initializing failed on step2 (moveEnd)");
+    if(!moveEnd(udev))
+    {
+      fprintf(stderr,"device not ready - initializing failed on step2 (moveEnd)");
+      return false;
+    }
   }
 
   usleep(100000);//0.1sec //must give device some time to think;)
 
+  return true;
 }
 
 
@@ -181,10 +182,14 @@ void initDevice(libusb_device_handle* udev)
 [ 6725.867488] usb 1-1.2: SerialNumber: Љ
 [ 6725.875451] hid-generic 0003:12D3:0002.0008: hiddev0,hidraw0: USB HID v1.11 Device [Linak DeskLine A/S USB Control Link] on usb-0000:00:1a.0-1.2/input0
 */
-static struct libusb_device_handle *openDevice(bool initialization=true)
+struct libusb_device_handle *openDevice(bool initialization)
 {
   libusb_device_handle* udev = libusb_open_device_with_vid_pid(0,VENDOR,PRODUCT);
-  if(udev==NULL) return NULL;
+  if(udev==NULL)
+  {
+    fprintf(stderr, "Error cant find usb device %d %d\n",VENDOR,PRODUCT);
+    return NULL;
+  }
 
   //claim device
   {
@@ -242,9 +247,9 @@ static struct libusb_device_handle *openDevice(bool initialization=true)
  *
  * question: target height is repeated 4times..can we move legs separately?
  */
-inline bool move(libusb_device_handle * udev, int16_t targetHeight, int timeout=1000)
+bool move(libusb_device_handle * udev, int16_t targetHeight, int timeout)
 {
-  unsigned char data[64];
+  unsigned char data[StatusReportSize];
   memset (data,0,sizeof(data));
 
   data[0]=0x05;
@@ -263,7 +268,7 @@ inline bool move(libusb_device_handle * udev, int16_t targetHeight, int timeout=
     URB_move.wLength,
     timeout
   );
-  return (64==ret);
+  return (ret==StatusReportSize);
 }
 
 /*
@@ -271,9 +276,9 @@ inline bool move(libusb_device_handle * udev, int16_t targetHeight, int timeout=
  * this will send:
  * 05 ff 7f ff 7f ff 7f ff 7f 00
 */
-bool moveDown(libusb_device_handle * udev, int timeout=1000)
+bool moveDown(libusb_device_handle * udev, int timeout)
 {
-  return move(udev,0x7fff,timeout);
+  return move(udev,HEIGHT_moveDownwards,timeout);
 }
 
 /*
@@ -281,9 +286,9 @@ bool moveDown(libusb_device_handle * udev, int timeout=1000)
  * this will send:
  * 05 00 80 00 80 00 80 00 80 00
 */
-bool moveUp(libusb_device_handle * udev, int timeout=1000)
+bool moveUp(libusb_device_handle * udev, int timeout)
 {
-  return move(udev,0x8000,timeout);
+  return move(udev,HEIGHT_moveUpwards,timeout);
 }
 
 /*
@@ -293,15 +298,15 @@ bool moveUp(libusb_device_handle * udev, int timeout=1000)
 */
 bool moveEnd(libusb_device_handle * udev, int timeout)
 {
-  return move(udev,0x8001,timeout);
+  return move(udev,HEIGHT_moveEnd,timeout);
 }
 
 /*
  * this will calculate height form statusReport
  */
-unsigned int getHeight(const statusReport &report)
+HEIGHT_type getHeight(const statusReport &report)
 {
-  return (unsigned int)report.height;
+  return (HEIGHT_type)report.height;
 }
 
 /*
