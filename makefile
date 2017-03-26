@@ -8,6 +8,7 @@ help:
 
 program:
 	make -C EXAMPLES build
+	make -C EXAMPLES run
 kernel:
 	make -C KERNEL_MODULE build
 all:	program
