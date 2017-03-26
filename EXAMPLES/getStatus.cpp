@@ -46,66 +46,109 @@ void printDescriptor(struct libusb_device_handle *udev)
   }
 }
 
-void printStatusReport(const usb2lin06::statusReport &report)
+const char SeparatorFields=',';
+const char SeparatorStart='{';
+const char SeparatorEnd='}';
+std::ostream& operator << (std::ostream &o, const usb2lin06::LINIDvalidFlag &a)
 {
-  const uint16_t vF = *reinterpret_cast<const uint16_t*>(&report.validFlag);
+  o<<"flags:" <<SeparatorStart
+  <<dec<<"0b"
+  //note: struct reversed
+  <<(int)a.unknown
+  <<(int)a.ID07_Ref8_pos_stat_speed
+  <<(int)a.ID06_Ref7_pos_stat_speed
+  <<(int)a.ID38_Handset2command
+  <<(int)a.ID37_Handset1command
+  <<(int)a.ID05_Ref6_pos_stat_speed
+  <<(int)a.ID28_Diagnostic
+  <<(int)a.ID04_Ref5_pos_stat_speed
+  <<(int)a.ID13_Ref4_controlInput
+  <<(int)a.ID12_Ref3_controlInput
+  <<(int)a.ID11_Ref2_controlInput
+  <<(int)a.ID10_Ref1_controlInput
+  <<(int)a.ID03_Ref4_pos_stat_speed
+  <<(int)a.ID02_Ref3_pos_stat_speed
+  <<(int)a.ID01_Ref2_pos_stat_speed
+  <<(int)a.ID00_Ref1_pos_stat_speed
+  <<SeparatorEnd;
+}
 
-  auto printRef = [](const usb2lin06::RefPosStatSpeed &r){
-     cout<<"{";
-     cout<<"p:"<<setw(4)<<hex<<r.pos;
-     switch(r.status)
-     {
-       case 0xf0:
-       case 0xe0: cout<<" DOWN "; break;
-       case 0x10: cout<<"  UP  "; break;
-       case 0x00: cout<<" STOP "; break;
-     }
-     cout<<"s:"<<setw(4)<<hex<<(unsigned int)r.speed<<"}";
-  };
+std::ostream& operator << (std::ostream &o, const usb2lin06::Status &a)
+{
+  o<<"status:"<<SeparatorStart
+  <<dec
+  <<(bool)a.positionLost << (bool)a.antiColision << (bool)a.overloadDown << (bool)a.overloadUp
+  <<SeparatorEnd;
+}
 
-  auto printControl= [](const usb2lin06::RefControlInput& c){
-    cout<<"cnt:["<<setw(4)<<std::bitset<16>(c)<<"]";
-  };
+std::ostream& operator << (std::ostream &o, const usb2lin06::RefPosStatSpeed &a)
+{
+  o<<"posStatSpeed:" <<SeparatorStart
+  <<hex<<setfill('0')
+  <<hex<<"0x"<<setw(4)<<(short)a.pos   <<SeparatorFields
+  <<                           a.status<<SeparatorFields
+  <<hex<<"0x"<<setw(4)<<(short)a.speed <<SeparatorEnd;
+}
 
-  auto printHandset = [](const uint16_t &h){
+std::ostream& operator << (std::ostream &o, const usb2lin06::Diagnostic &a)
+{
+  o<<"diag:"   <<SeparatorStart
+  <<hex<<"0x"<<setw(4)<<(short)a.type     <<SeparatorFields
+  <<dec
+  <<(int)a.event[0] <<SeparatorFields
+  <<(int)a.event[1] <<SeparatorFields
+  <<(int)a.event[2] <<SeparatorFields
+  <<(int)a.event[3] <<SeparatorFields
+  <<(int)a.event[4] <<SeparatorFields
+  <<(int)a.event[5] <<SeparatorEnd;
+}
+
+std::ostream& operator << (std::ostream &o, const usb2lin06::statusReport &a) {
+
+  auto handsetToStr = [](const uint16_t &h)-> const char*
+  {
     switch(h)
     {
-    case 0xffff: cout<<"--"; break;
-    case 0x0047: cout<<"B1"; break;
-    case 0x0046: cout<<"B2"; break;
-    case 0x000e: cout<<"B3"; break;
-    case 0x000f: cout<<"B4"; break;
-    case 0x000c: cout<<"B5"; break;
-    case 0x000d: cout<<"B6"; break;
-    default:     cout<<"??"; break;
+    case 0xffff: return "--";
+    case 0x0047: return "B1";
+    case 0x0046: return "B2";
+    case 0x000e: return "B3";
+    case 0x000f: return "B4";
+    case 0x000c: return "B5";
+    case 0x000d: return "B6";
     }
+    return "??";
   };
 
-  cout<<hex<<setfill('0');
-  cout<<" header:"<<setw(2)<<(int)report.header;
-  cout<<" bytes:"<<setw(2)<<(int)report.numberOfBytes;
-  cout<<" vF:"<<setw(16)<< std::bitset<16>(vF);
+  o<<"statusReport:"<<SeparatorStart
+  <<hex<<setfill('0')
+//  <<"ID:"  << SeparatorStart <<setw(2)<<(int)a.featureRaportID <<SeparatorEnd<<SeparatorFields
+//  <<"bytes:"<<SeparatorStart <<setw(2)<<(int)a.numberOfBytes   <<SeparatorEnd <<SeparatorFields
+  <<a.validFlag;
+  if(a.validFlag.ID00_Ref1_pos_stat_speed) o<<SeparatorFields<<"ref1"<< a.ref1;
+  if(a.validFlag.ID01_Ref2_pos_stat_speed) o<<SeparatorFields<<"ref2"<< a.ref2;
+  if(a.validFlag.ID02_Ref3_pos_stat_speed) o<<SeparatorFields<<"ref3"<< a.ref3;
+  if(a.validFlag.ID03_Ref4_pos_stat_speed) o<<SeparatorFields<<"ref4"<< a.ref4;
+  if(a.validFlag.ID04_Ref5_pos_stat_speed) o<<SeparatorFields<<"ref5"<< a.ref5;
+  if(a.validFlag.ID05_Ref6_pos_stat_speed) o<<SeparatorFields<<"ref6"<< a.ref6;
+  if(a.validFlag.ID06_Ref7_pos_stat_speed) o<<SeparatorFields<<"ref7"<< a.ref7;
+  if(a.validFlag.ID07_Ref8_pos_stat_speed) o<<SeparatorFields<<"ref8"<< a.ref8;
+  if(a.validFlag.ID10_Ref1_controlInput)   o<<SeparatorFields<<"ref1ctr:"<<SeparatorStart<<setw(4)<< (short)(a.ref1cnt)  <<SeparatorEnd;
+  if(a.validFlag.ID11_Ref2_controlInput)   o<<SeparatorFields<<"ref2ctr:"<<SeparatorStart<<setw(4)<< (short)(a.ref2cnt)  <<SeparatorEnd;
+  if(a.validFlag.ID12_Ref3_controlInput)   o<<SeparatorFields<<"ref3ctr:"<<SeparatorStart<<setw(4)<< (short)(a.ref3cnt)  <<SeparatorEnd;
+  if(a.validFlag.ID13_Ref4_controlInput)   o<<SeparatorFields<<"ref4ctr:"<<SeparatorStart<<setw(4)<< (short)(a.ref4cnt)  <<SeparatorEnd;
+  if(a.validFlag.ID28_Diagnostic)  o<<a.diagnostic <<SeparatorFields;
+//  <<"undefined1:"   <<SeparatorStart <<(int)a.undefined1[0] <<(int)a.undefined1[1] <<SeparatorEnd  <<SeparatorFields
+  if(a.validFlag.ID37_Handset1command) o<<SeparatorFields<<"handset1:"<< SeparatorStart << handsetToStr(a.handset1) <<SeparatorEnd;
+  if(a.validFlag.ID38_Handset2command) o<<SeparatorFields<<"handset2:"<< SeparatorStart << handsetToStr(a.handset2) <<SeparatorEnd;
+//  <<"undefined2:"   <<SeparatorStart <<(int)a.undefined2[0] <<(int)a.undefined2[1] <<(int)a.undefined2[2] <<(int)a.undefined2[3] <<(int)a.undefined2[4] <<(int)a.undefined2[5] <<SeparatorEnd
 
-  cout<<" ref1:";  printRef(report.ref1);  printControl(report.ref1cnt);
-  cout<<" ref2:";  printRef(report.ref2);  printControl(report.ref2cnt);
-  //cout<<" ref3:";  printRef(report.ref3);  printControl(report.ref3cnt);
-  //cout<<" ref4:";  printRef(report.ref4);  printControl(report.ref4cnt);
-  //cout<<"ref5:";  printRef(report.ref5);
-  //diagnostic[8]
-  //undefined1[2]
-  cout<<" H1:"; printHandset(report.handset1);
-  // printHandset(report.handset2);
-  //  printRef(report.ref6);
-  //  printRef(report.ref7);
-  //  printRef(report.ref8);
-  //undefined2[]
+  o<<SeparatorEnd;
+}
 
-  cout<<" height: "<<fixed<<setfill(' ')<<setprecision(1)
-      <<dec<<setw(5)<< usb2lin06::getHeight(report)
-      <<" = "
-      <<dec<<setw(5)<< usb2lin06::getHeightInCM(report) <<"cm"
-      <<endl;
-
+void printStatusReport(const usb2lin06::statusReport &report)
+{
+  cout<<report<<endl;
   return;
 }
 
@@ -234,7 +277,7 @@ int main (int argc,char **argv)
 
     unsigned int i=1;   while(true)
     {
-      cout<<getPreciseTime()<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
+      cout<<getPreciseTime()<<dec<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
 
       if(usb2lin06::getStatusReport(udev,report))
       { printStatusReport(report); }
@@ -248,6 +291,7 @@ int main (int argc,char **argv)
 
   //cleanup
   {
+    cout<<"DONE";
     libusb_close(udev);
     libusb_exit(0);
   }

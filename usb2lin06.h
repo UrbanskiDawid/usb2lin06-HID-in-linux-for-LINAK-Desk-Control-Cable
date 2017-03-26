@@ -11,6 +11,7 @@
 #define VENDOR  0x12d3
 #define PRODUCT 0x0002
 
+//========================================================================================================
 struct LINIDvalidFlag
 {
   bool ID00_Ref1_pos_stat_speed:1;
@@ -35,28 +36,69 @@ struct LINIDvalidFlag
   bool ID06_Ref7_pos_stat_speed:1;
   bool ID07_Ref8_pos_stat_speed:1;
 
-  bool unknown1:1;
-};
-
+  bool unknown:1;
+};//2 Bytes
 #ifdef __cplusplus
-static_assert(sizeof(LINIDvalidFlag)==sizeof(uint16_t),"wrong size of LINIDvalidFlag (must be 16bit)");
+static_assert(sizeof(LINIDvalidFlag)==2,"wrong size of LINIDvalidFlag (must be 16bit)");
 #endif
 
+//========================================================================================================
+//0x00 <<stop,0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going dow
+struct Status{
+  bool positionLost:1;//only movment downwards allowed. Must initialize
+  bool antiColision:1;
+  bool overloadDown:1;//only movment upwards allowes
+  bool overloadUp:1;  //only movment downwards allowed
+  uint8_t unknown:4;  //?
+};//1 Byte
+#ifdef __cplusplus
+static_assert(sizeof(Status)==1,"wrong size of Status");
+#endif
+
+//========================================================================================================
 typedef int16_t RefControlInput;
 
 struct RefPosStatSpeed
 {
-  RefControlInput pos;   //HEIGHT low,high 0x00 0x00 <<bottom
-  uint8_t         status;//0x00 <<stop,0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going down
+  RefControlInput pos;   //'HEIGHT' low,high 0x00 0x00 <<bottom
+  struct Status   status;//0x00 <<stop,0xe0 <<going down,0x10<< going up, 0xf0 starting/ending going down
   uint8_t         speed; //if != 0 them moving;
+};//4 Bytes
+#ifdef __cplusplus
+static_assert(sizeof(RefPosStatSpeed)==sizeof(uint32_t),"wrong size of RefPosStatSpeed");
+#endif
+
+//========================================================================================================
+struct Diagnostic
+{
+  uint16_t type;
+  uint8_t event[6];
+};//1 Byte
+#ifdef __cplusplus
+static_assert(sizeof(Status)==1,"wrong size of Diagnostic");
+#endif
+
+//========================================================================================================
+enum FeatureRaportID
+{
+  NotUsed1=1,
+  NotUsed2=2,
+  SetOperationModeForUSB2LIN=3,
+  GetLinData=4,
+  ControlCBD=5,
+  ControlTD=6,
+  NotUsed3=7,
+  ControlCBDorTD=8,
+  GetExtLinData=9
 };
 
+//========================================================================================================
 #define StatusReport_ID 0x4
 #define StatusReport_nrOfBytes 0x38
 #define StatusReportSize 64
 struct statusReport
 {
-  uint8_t header;                  //[ 0 ] 0x04(CurrentStatusReport)
+  uint8_t featureRaportID;         //[ 0 ] 0x04(CurrentStatusReport)
   uint8_t numberOfBytes;           //[ 1 ] 0x38(StatusReport_nrOfBytes)
   struct LINIDvalidFlag validFlag; //[ 2, 3] 0x1108 << after movment (few seconds), 0x0000 afterwards, 0x0108 << while moving
   struct RefPosStatSpeed ref1;     //[ 4, 5, 6, 7] pos,status,speed
@@ -68,7 +110,7 @@ struct statusReport
   RefControlInput ref3cnt;         //[24,25] target height
   RefControlInput ref4cnt;         //[26,27] target height
   struct RefPosStatSpeed ref5;     //[28,29,30,31] pos,status,speed
-  uint8_t diagnostic[8];           //[32,33,34,35,36,37,38,39]
+  struct Diagnostic diagnostic;    //[32,33,34,35,36,37,38,39]
   uint8_t undefined1[2];           //[40,41]
   uint16_t handset1;               //[42,43] buttons
   uint16_t handset2;               //[44,45] buttons
@@ -76,8 +118,9 @@ struct statusReport
   struct RefPosStatSpeed ref7;     //[50-53] pos,status,speed
   struct RefPosStatSpeed ref8;     //[54-57] pos,status,speed
   uint8_t undefined2[6];           //[58-63]
-};
+};//64 Bytes
 
+//========================================================================================================
 #ifdef __cplusplus
 static_assert(sizeof(statusReport)==StatusReportSize,"wrong size of statusReport");
 #endif
@@ -91,6 +134,7 @@ struct sCtrlURB
   uint16_t wLength;
 };
 
+//========================================================================================================
 #define USB2LIN_modeOfOperation_featureReportID 3
 #define USB2LIN_ModeOfOperation_default 4
 
@@ -108,7 +152,6 @@ const struct sCtrlURB URB_move      = { 0x21, 9/*HID_REPORT_SET*/, URB_wValue_Mo
 void printLibStrErr(int errID);
 
 //height - is a 16 signed integer with the height in 1/10 mm with 0 as lowest height of actuators together with 8 bit status information
-//TODO: veryfy type: signed/unsigned
 //TODO: ?8 bit status information?
 #define HEIGHT_moveDownwards 0x7fff
 #define HEIGHT_moveUpwards   0x8000

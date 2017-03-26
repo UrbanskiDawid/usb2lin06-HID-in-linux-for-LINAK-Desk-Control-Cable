@@ -110,7 +110,7 @@ bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeo
   //for(int i=0;i<StatusReportSize;i++) {    cout<<setw(2)<<setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";} cout<<endl;
 
   memcpy(&report, buf, sizeof(report));
-  return (report.header==StatusReport_ID && report.numberOfBytes==StatusReport_nrOfBytes);
+  return (report.featureRaportID==StatusReport_ID && report.numberOfBytes==StatusReport_nrOfBytes);
 }
 
 /*
