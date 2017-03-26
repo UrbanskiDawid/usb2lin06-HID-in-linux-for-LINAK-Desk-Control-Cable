@@ -37,7 +37,10 @@ struct LINIDvalidFlag
 
   bool unknown1:1;
 };
+
+#ifdef __cplusplus
 static_assert(sizeof(LINIDvalidFlag)==sizeof(uint16_t),"wrong size of LINIDvalidFlag (must be 16bit)");
+#endif
 
 typedef int16_t RefControlInput;
 
@@ -53,28 +56,31 @@ struct RefPosStatSpeed
 #define StatusReportSize 64
 struct statusReport
 {
-  uint8_t header;           //[ 0 ] 0x04(CurrentStatusReport),
-  uint8_t numberOfBytes;    //[ 1 ] 0x38(CurrentStatusReport)
-  LINIDvalidFlag validFlag; //[ 2, 3] 0x1108 << after movment (few seconds), 0x0000 afterwards, 0x0108 << while moving
-  RefPosStatSpeed ref1;     //[ 4, 5, 6, 7] pos,status,speed
-  RefPosStatSpeed ref2;     //[ 8, 9,10,11] pos,status,speed
-  RefPosStatSpeed ref3;     //[12,13,14,15] pos,status,speed
-  RefPosStatSpeed ref4;     //[16,17,18,19] pos,status,speed
-  RefControlInput ref1cnt;  //[20,21] target height
-  RefControlInput ref2cnt;  //[22,23] target height
-  RefControlInput ref3cnt;  //[24,25] target height
-  RefControlInput ref4cnt;  //[26,27] target height
-  RefPosStatSpeed ref5;     //[28,29,30,31] pos,status,speed
-  uint8_t diagnostic[8];    //[32,33,34,35,36,37,38,39]
-  uint8_t undefined1[2];    //[40,41]
-  uint16_t handset1;        //[42,43] buttons
-  uint16_t handset2;        //[44,45] buttons
-  RefPosStatSpeed ref6;     //[46-49] pos,status,speed
-  RefPosStatSpeed ref7;     //[50-53] pos,status,speed
-  RefPosStatSpeed ref8;     //[54-57] pos,status,speed
-  uint8_t undefined2[6];    //[58-63]
+  uint8_t header;                  //[ 0 ] 0x04(CurrentStatusReport)
+  uint8_t numberOfBytes;           //[ 1 ] 0x38(StatusReport_nrOfBytes)
+  struct LINIDvalidFlag validFlag; //[ 2, 3] 0x1108 << after movment (few seconds), 0x0000 afterwards, 0x0108 << while moving
+  struct RefPosStatSpeed ref1;     //[ 4, 5, 6, 7] pos,status,speed
+  struct RefPosStatSpeed ref2;     //[ 8, 9,10,11] pos,status,speed
+  struct RefPosStatSpeed ref3;     //[12,13,14,15] pos,status,speed
+  struct RefPosStatSpeed ref4;     //[16,17,18,19] pos,status,speed
+  RefControlInput ref1cnt;         //[20,21] target height
+  RefControlInput ref2cnt;         //[22,23] target height
+  RefControlInput ref3cnt;         //[24,25] target height
+  RefControlInput ref4cnt;         //[26,27] target height
+  struct RefPosStatSpeed ref5;     //[28,29,30,31] pos,status,speed
+  uint8_t diagnostic[8];           //[32,33,34,35,36,37,38,39]
+  uint8_t undefined1[2];           //[40,41]
+  uint16_t handset1;               //[42,43] buttons
+  uint16_t handset2;               //[44,45] buttons
+  struct RefPosStatSpeed ref6;     //[46-49] pos,status,speed
+  struct RefPosStatSpeed ref7;     //[50-53] pos,status,speed
+  struct RefPosStatSpeed ref8;     //[54-57] pos,status,speed
+  uint8_t undefined2[6];           //[58-63]
 };
+
+#ifdef __cplusplus
 static_assert(sizeof(statusReport)==StatusReportSize,"wrong size of statusReport");
+#endif
 
 struct sCtrlURB
 {
@@ -108,22 +114,5 @@ void printLibStrErr(int errID);
 #define HEIGHT_moveUpwards   0x8000
 #define HEIGHT_moveEnd       0x8001
 //------
-
-// PUBLIC INTERFACE
-//================================================================================
-struct libusb_device_handle *openDevice(bool initialization=true);
-bool initDevice(libusb_device_handle* udev);
-
-bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeout=DefaultUSBtimeoutMS);
-bool isStatusReportNotReady(const statusReport &report);
-int   getHeight(const statusReport &report);
-float getHeightInCM(const statusReport &report);
-
-bool move    (libusb_device_handle * udev, int16_t targetHeight, int timeout=DefaultUSBtimeoutMS);
-bool moveDown(libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
-bool moveUp  (libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
-bool moveEnd (libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
-//================================================================================
-
 
 #endif

@@ -23,6 +23,23 @@ namespace usb2lin06
 {
 #include "usb2lin06.h"
 
+// PUBLIC INTERFACE
+//================================================================================
+struct libusb_device_handle *openDevice(bool initialization=true);
+bool initDevice(libusb_device_handle* udev);
+
+bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeout=DefaultUSBtimeoutMS);
+bool isStatusReportNotReady(const statusReport &report);
+int   getHeight(const statusReport &report);
+float getHeightInCM(const statusReport &report);
+
+bool move    (libusb_device_handle * udev, int16_t targetHeight, int timeout=DefaultUSBtimeoutMS);
+bool moveDown(libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
+bool moveUp  (libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
+bool moveEnd (libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
+//================================================================================
+
+
 void printLibStrErr(int errID)
 {
   switch(errID)

@@ -86,9 +86,9 @@ static void updateStatus(int minAgeSec,long minAgeNanoSec)
   {
     memcpy(&report, buf, sizeof(report));
     buf[63]=0;
-    printk(KERN_INFO "updateStatus() OK current height: %d",report.height);
+    printk(KERN_INFO "updateStatus() OK current height: %d",report.ref1.pos);
 
-    DATA.curentHeight = (int)report.height;
+    DATA.curentHeight = (int)report.ref1.pos;
     getnstimeofday(&DATA.updateTime);
   }else{
     if(ret==-EPIPE)  printk(KERN_WARNING "updateStatus() broken pipe!");
