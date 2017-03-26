@@ -51,7 +51,8 @@ void printStatusReport(const usb2lin06::statusReport &report)
   const uint16_t vF = *reinterpret_cast<const uint16_t*>(&report.validFlag);
 
   auto printRef = [](const usb2lin06::RefPosStatSpeed &r){
-     cout<<setw(4)<<r.pos;
+     cout<<"{";
+     cout<<"p:"<<setw(4)<<hex<<r.pos;
      switch(r.status)
      {
        case 0xf0:
@@ -59,7 +60,11 @@ void printStatusReport(const usb2lin06::statusReport &report)
        case 0x10: cout<<"  UP  "; break;
        case 0x00: cout<<" STOP "; break;
      }
-     cout<<setw(4)<<r.speed;
+     cout<<"s:"<<setw(4)<<hex<<(unsigned int)r.speed<<"}";
+  };
+
+  auto printControl= [](const usb2lin06::RefControlInput& c){
+    cout<<"cnt:["<<setw(4)<<std::bitset<16>(c)<<"]";
   };
 
   auto printHandset = [](const uint16_t &h){
@@ -76,34 +81,26 @@ void printStatusReport(const usb2lin06::statusReport &report)
     }
   };
 
-  auto printControl= [](const usb2lin06::RefControlInput& c){
-    cout<<setw(4)<<std::bitset<16>(c);
-  };
-
   cout<<hex<<setfill('0');
-  cout<<" header:"<<setw(4)<<(int)report.header;
-  cout<<" bytes:"<<setw(4)<<(int)report.numberOfBytes;
+  cout<<" header:"<<setw(2)<<(int)report.header;
+  cout<<" bytes:"<<setw(2)<<(int)report.numberOfBytes;
   cout<<" vF:"<<setw(16)<< std::bitset<16>(vF);
 
-  printRef(report.ref1);
-  printRef(report.ref2);
-  printRef(report.ref3);
-  printRef(report.ref4);
-  printControl(report.ref1cnt);
-  printControl(report.ref2cnt);
-  printControl(report.ref3cnt);
-  printControl(report.ref4cnt);
-  printRef(report.ref5);
+  cout<<" ref1:";  printRef(report.ref1);  printControl(report.ref1cnt);
+  cout<<" ref2:";  printRef(report.ref2);  printControl(report.ref2cnt);
+  //cout<<" ref3:";  printRef(report.ref3);  printControl(report.ref3cnt);
+  //cout<<" ref4:";  printRef(report.ref4);  printControl(report.ref4cnt);
+  //cout<<"ref5:";  printRef(report.ref5);
   //diagnostic[8]
   //undefined1[2]
-  printHandset(report.handset1);
-  printHandset(report.handset2);
-  printRef(report.ref6);
-  printRef(report.ref7);
-  printRef(report.ref8);
+  cout<<" H1:"; printHandset(report.handset1);
+  // printHandset(report.handset2);
+  //  printRef(report.ref6);
+  //  printRef(report.ref7);
+  //  printRef(report.ref8);
   //undefined2[]
 
-  cout<<"\t height: "<<fixed<<setfill(' ')<<setprecision(1)
+  cout<<" height: "<<fixed<<setfill(' ')<<setprecision(1)
       <<dec<<setw(5)<< usb2lin06::getHeight(report)
       <<" = "
       <<dec<<setw(5)<< usb2lin06::getHeightInCM(report) <<"cm"
