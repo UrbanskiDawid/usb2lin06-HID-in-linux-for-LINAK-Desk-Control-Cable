@@ -32,6 +32,7 @@ bool getCurrentHeight(libusb_device_handle* udev,float &h)
 #define LIBUSB_DEFAULT_TIMEOUT 1000
 int main (int argc,char **argv)
 {
+  libusb_context *ctx = NULL;
   libusb_device_handle* udev = NULL;
   unsigned char buf[256];
 
@@ -39,16 +40,16 @@ int main (int argc,char **argv)
 
   //init libusb
   {
-    if(libusb_init(0)!=0)
+    if(libusb_init(&ctx)!=0)
     {
       fprintf(stderr, "Error failed to init libusb");
       return 1;
     }
 
     #ifdef DEBUG
-    libusb_set_debug(0,LIBUSB_LOG_LEVEL_DEBUG);
+    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL_DEBUG);
     #else
-    libusb_set_debug(0,LIBUSB_LOG_LEVEL_WARNING);
+    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL_WARNING);
     #endif
   }
 
@@ -80,8 +81,9 @@ int main (int argc,char **argv)
   //cleanup
   {
     DEBUGOUT("main() - exit");
+
     libusb_close(udev);
-    libusb_exit(0);
+    libusb_exit(ctx);
   }
   return 0;
 }

@@ -175,6 +175,7 @@ std::string getPreciseTime()
 
 int main (int argc,char **argv)
 {
+  libusb_context *ctx = NULL;
   libusb_device_handle* udev = NULL;
   unsigned char buf[256];
   int ret=-1;
@@ -216,15 +217,15 @@ int main (int argc,char **argv)
 
   //init libusb
   {
-    if(libusb_init(0)!=0)
+    if(libusb_init(&ctx)!=0)
     {
       fprintf(stderr, "Error failed to init libusb");
       return 1;
     }
 #ifdef DEBUG
-    libusb_set_debug(0,LIBUSB_LOG_LEVEL_DEBUG);
+    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL_DEBUG);
 #else
-    libusb_set_debug(0,LIBUSB_LOG_LEVEL_WARNING);//and let usblib be verbose
+    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL_WARNING);//and let usblib be verbose
 #endif
   }
 
@@ -279,13 +280,17 @@ int main (int argc,char **argv)
     usb2lin06::StatusReport report;
     std::string sCOUNT =  std::to_string(SETTINGS_COUNT);
 
-    unsigned int i=1;   while(true)
+    unsigned int i=1;
+    while(true)
     {
-
       if(usb2lin06::getStatusReport(udev,report))
       {
-        cout<<getPreciseTime()<<dec<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
-        printStatusReport(report);
+        if(usb2lin06::isStatusReportNotReady(report)){
+          cout<<" Error: statusReport -> device not ready"<<endl;
+        }else{
+          cout<<getPreciseTime()<<dec<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
+          printStatusReport(report);
+        }
       }
       else
       { cout<<" Error "<<endl; }
@@ -299,7 +304,7 @@ int main (int argc,char **argv)
   {
     cout<<"DONE";
     libusb_close(udev);
-    libusb_exit(0);
+    libusb_exit(ctx);
   }
   return 0;
 }
