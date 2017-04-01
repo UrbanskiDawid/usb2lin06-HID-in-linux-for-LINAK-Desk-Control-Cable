@@ -96,7 +96,7 @@ enum FeatureRaportID
 #define StatusReport_ID 0x4
 #define StatusReport_nrOfBytes 0x38
 #define StatusReportSize 64
-struct statusReport
+struct StatusReport
 {
   uint8_t featureRaportID;         //[ 0 ] 0x04(CurrentStatusReport)
   uint8_t numberOfBytes;           //[ 1 ] 0x38(StatusReport_nrOfBytes)
@@ -122,7 +122,7 @@ struct statusReport
 
 //========================================================================================================
 #ifdef __cplusplus
-static_assert(sizeof(statusReport)==StatusReportSize,"wrong size of statusReport");
+static_assert(sizeof(StatusReport)==StatusReportSize,"wrong size of StatusReport");
 #endif
 
 struct sCtrlURB

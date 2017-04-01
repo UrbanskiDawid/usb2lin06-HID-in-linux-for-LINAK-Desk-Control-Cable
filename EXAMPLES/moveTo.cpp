@@ -17,7 +17,7 @@ using namespace std;
  */
 bool moveTo(  libusb_device_handle* udev, uint16_t target)
 {
-  usb2lin06::statusReport r;
+  usb2lin06::StatusReport r;
 
   const unsigned int max_a = 3; unsigned int a = max_a;//stuck protection
   uint16_t oldH=0;

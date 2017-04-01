@@ -103,7 +103,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::Diagnostic &a)
   <<(int)a.event[5] <<SeparatorEnd;
 }
 
-std::ostream& operator << (std::ostream &o, const usb2lin06::statusReport &a) {
+std::ostream& operator << (std::ostream &o, const usb2lin06::StatusReport &a) {
 
   auto handsetToStr = [](const uint16_t &h)-> const char*
   {
@@ -120,7 +120,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::statusReport &a) {
     return "??";
   };
 
-  o<<"statusReport:"<<SeparatorStart
+  o<<"StatusReport:"<<SeparatorStart
   <<hex<<setfill('0')
 //  <<"ID:"  << SeparatorStart <<setw(2)<<(int)a.featureRaportID <<SeparatorEnd<<SeparatorFields
 //  <<"bytes:"<<SeparatorStart <<setw(2)<<(int)a.numberOfBytes   <<SeparatorEnd <<SeparatorFields
@@ -146,7 +146,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::statusReport &a) {
   o<<SeparatorEnd;
 }
 
-void printStatusReport(const usb2lin06::statusReport &report)
+void printStatusReport(const usb2lin06::StatusReport &report)
 {
   cout<<report<<endl;
   return;
@@ -256,7 +256,7 @@ int main (int argc,char **argv)
 
   //check if device it ready
   {
-    usb2lin06::statusReport report;
+    usb2lin06::StatusReport report;
     if(!usb2lin06::getStatusReport(udev,report))
     {
       cout<<" Error: cant get initial status";
@@ -272,7 +272,7 @@ int main (int argc,char **argv)
 
   //getting status SETTINGS_COUNT times
   {
-    usb2lin06::statusReport report;
+    usb2lin06::StatusReport report;
     std::string sCOUNT =  std::to_string(SETTINGS_COUNT);
 
     unsigned int i=1;   while(true)

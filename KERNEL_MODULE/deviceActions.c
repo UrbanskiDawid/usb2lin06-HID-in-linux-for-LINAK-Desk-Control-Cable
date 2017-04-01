@@ -56,7 +56,7 @@ static void updateStatus(int minAgeSec,long minAgeNanoSec)
 {
   unsigned char buf[64];
   int ret;
-  struct statusReport report;
+  struct StatusReport report;
 
   if(DATA.udev==NULL)
   {

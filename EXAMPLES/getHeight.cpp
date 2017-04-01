@@ -16,7 +16,7 @@ using namespace std;
 bool getCurrentHeight(libusb_device_handle* udev,float &h)
 {
   h=-1.0f;
-  usb2lin06::statusReport report;
+  usb2lin06::StatusReport report;
 
   if(usb2lin06::getStatusReport(udev,report))
   {

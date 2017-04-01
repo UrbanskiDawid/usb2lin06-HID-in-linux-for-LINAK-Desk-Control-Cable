@@ -28,10 +28,10 @@ namespace usb2lin06
 struct libusb_device_handle *openDevice(bool initialization=true);
 bool initDevice(libusb_device_handle* udev);
 
-bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeout=DefaultUSBtimeoutMS);
-bool isStatusReportNotReady(const statusReport &report);
-int   getHeight(const statusReport &report);
-float getHeightInCM(const statusReport &report);
+bool getStatusReport(libusb_device_handle* udev, StatusReport &report, int timeout=DefaultUSBtimeoutMS);
+bool isStatusReportNotReady(const StatusReport &report);
+int   getHeight(const StatusReport &report);
+float getHeightInCM(const StatusReport &report);
 
 bool move    (libusb_device_handle * udev, int16_t targetHeight, int timeout=DefaultUSBtimeoutMS);
 bool moveDown(libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
@@ -76,7 +76,7 @@ void printLibStrErr(int errID)
  * anwswer to this contains 64B of data example:
   04380000ee07000000000000000000000000000001800000000000000000000001001000000000000000ffff0000000000000000000000000000100000000000
 */
-bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeout)
+bool getStatusReport(libusb_device_handle* udev, StatusReport &report, int timeout)
 {
   unsigned char buf[StatusReportSize]; //CONTROL responce data
   int ret = libusb_control_transfer(
@@ -118,7 +118,7 @@ bool getStatusReport(libusb_device_handle* udev, statusReport &report, int timeo
  * 0x04380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  * the device is not ready!
 */
-bool isStatusReportNotReady(const statusReport &report) {
+bool isStatusReportNotReady(const StatusReport &report) {
 
   char report_bytes[StatusReportSize];
   memcpy(&report_bytes, &report, sizeof(report));
@@ -231,7 +231,7 @@ struct libusb_device_handle *openDevice(bool initialization)
   //init device
   if(initialization)
   {
-    statusReport report;
+    StatusReport report;
     if(!getStatusReport(udev, report))
     {
       fprintf(stderr, "Error geting init status report!\n");
@@ -319,9 +319,9 @@ bool moveEnd(libusb_device_handle * udev, int timeout)
 }
 
 /*
- * this will calculate height form statusReport
+ * this will calculate height form StatusReport
  */
-int getHeight(const statusReport &report)
+int getHeight(const StatusReport &report)
 {
   return (int)report.ref1.pos;
 }
@@ -329,7 +329,7 @@ int getHeight(const statusReport &report)
 /*
  * get height in centimeters, rough - precision: 1decimal points
  */
-float getHeightInCM(const statusReport &report)
+float getHeightInCM(const StatusReport &report)
 {
   return (float)report.ref1.pos/98.0f;
 }
