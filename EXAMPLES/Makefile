@@ -17,9 +17,13 @@ check:
 	@echo -n "usb device: "
 	@lsusb -v -d 12d3:0002 && echo "OK" || echo "ERROR";
 build:
-	$(CC) $(CFLAGS) getStatus.cpp -o example-getStatus $(LFLAGS)
-	$(CC) $(CFLAGS) moveTo.cpp -o example-moveTo $(LFLAGS)
-	$(CC) $(CFLAGS) getHeight.cpp -o example-getHeight $(LFLAGS)
+	$(CC) $(DEBUG) $(CFLAGS) getStatus.cpp -o example-getStatus $(LFLAGS)
+	$(CC) $(DEBUG) $(CFLAGS) moveTo.cpp -o example-moveTo $(LFLAGS)
+	$(CC) $(DEBUG) $(CFLAGS) getHeight.cpp -o example-getHeight $(LFLAGS)
+
+debug: DEBUG = -DDEBUG
+debug: build
+	
 clean:
 	rm -f example-moveTo example-getStatus example-getHeight
 run:

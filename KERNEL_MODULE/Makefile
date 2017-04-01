@@ -13,9 +13,9 @@ default:
 check:
 	@if [ ! -d /lib/modules/$(shell uname -r)/build ]; then echo "ERROR: linux headers are missing.\nPlease install: $ sudo apt-get install linux-headers"; exit 1; fi
 build:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules -lusb
+	make -C /lib/modules/$(shell uname -r)/build M=$(shell pwd) modules -lusb
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+	make -C /lib/modules/$(shell uname -r)/build M=$(shell pwd) clean
 start:
 	sudo insmod $(MODULE_NAME).ko
 stop:

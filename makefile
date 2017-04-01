@@ -1,5 +1,4 @@
-.DEFAULT_GOAL := program
-
+.DEFAULT_GOAL := default
 help:
 	@echo please use:
 	@echo *all - to build all
@@ -8,7 +7,18 @@ help:
 
 program:
 	make -C EXAMPLES build
-	make -C EXAMPLES run
 kernel:
 	make -C KERNEL_MODULE build
-all:	program
+
+default:	program
+	make -C EXAMPLES run
+
+debug:
+	make -C EXAMPLES debug
+	make -C EXAMPLES run
+		
+clean:
+	make -C EXAMPLES clean
+	make -C KERNEL_MODULE clean
+
+all:	program	kernel
