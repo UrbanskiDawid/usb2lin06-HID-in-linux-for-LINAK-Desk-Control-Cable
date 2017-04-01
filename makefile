@@ -7,15 +7,15 @@ help:
 
 program:
 	make -C EXAMPLES build
+run:
+	make -C EXAMPLES run
 kernel:
 	make -C KERNEL_MODULE build
 
-default:	program
-	make -C EXAMPLES run
+default:	program	run
 
 debug:
 	make -C EXAMPLES debug
-	make -C EXAMPLES run
 		
 clean:
 	make -C EXAMPLES clean
