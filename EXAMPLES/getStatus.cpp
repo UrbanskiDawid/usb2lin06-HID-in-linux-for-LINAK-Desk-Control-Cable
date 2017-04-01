@@ -221,7 +221,11 @@ int main (int argc,char **argv)
       fprintf(stderr, "Error failed to init libusb");
       return 1;
     }
+#ifdef DEBUG
+    libusb_set_debug(0,LIBUSB_LOG_LEVEL_DEBUG);
+#else
     libusb_set_debug(0,LIBUSB_LOG_LEVEL_WARNING);//and let usblib be verbose
+#endif
   }
 
   //find and open device
@@ -277,10 +281,12 @@ int main (int argc,char **argv)
 
     unsigned int i=1;   while(true)
     {
-      cout<<getPreciseTime()<<dec<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
 
       if(usb2lin06::getStatusReport(udev,report))
-      { printStatusReport(report); }
+      {
+        cout<<getPreciseTime()<<dec<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
+        printStatusReport(report);
+      }
       else
       { cout<<" Error "<<endl; }
 

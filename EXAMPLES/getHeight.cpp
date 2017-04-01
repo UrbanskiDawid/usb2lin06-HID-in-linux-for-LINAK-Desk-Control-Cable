@@ -20,6 +20,8 @@ bool getCurrentHeight(libusb_device_handle* udev,float &h)
 
   if(usb2lin06::getStatusReport(udev,report))
   {
+     if(isStatusReportNotReady(report)) return false;
+
      h=usb2lin06::getHeightInCM(report);
      return true;
   }
@@ -32,7 +34,8 @@ int main (int argc,char **argv)
 {
   libusb_device_handle* udev = NULL;
   unsigned char buf[256];
-  int ret=-1;
+
+  DEBUGOUT("main() - start");
 
   //init libusb
   {
@@ -41,11 +44,18 @@ int main (int argc,char **argv)
       fprintf(stderr, "Error failed to init libusb");
       return 1;
     }
-    libusb_set_debug(0,LIBUSB_LOG_LEVEL_WARNING);//and let usblib be verbose
+
+    #ifdef DEBUG
+    libusb_set_debug(0,LIBUSB_LOG_LEVEL_DEBUG);
+    #else
+    libusb_set_debug(0,LIBUSB_LOG_LEVEL_WARNING);
+    #endif
   }
 
   //find and open device
   {
+    DEBUGOUT("main() - openDevice");
+
     udev = usb2lin06::openDevice();
     if(udev == NULL )
     {
@@ -56,6 +66,8 @@ int main (int argc,char **argv)
 
   //getting height
   {
+    DEBUGOUT("main() - getHeigh");
+
     float curHeight = 1.0f;
     if(!getCurrentHeight(udev,curHeight))
     {
@@ -67,6 +79,7 @@ int main (int argc,char **argv)
 
   //cleanup
   {
+    DEBUGOUT("main() - exit");
     libusb_close(udev);
     libusb_exit(0);
   }

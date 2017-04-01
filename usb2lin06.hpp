@@ -39,6 +39,11 @@ bool moveUp  (libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
 bool moveEnd (libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
 //================================================================================
 
+#ifdef DEBUG
+  #define DEBUGOUT(...) fprintf(stderr,"DEBUG %s:%d %s\n",__FILE__, __LINE__,__VA_ARGS__);
+#else
+  #define DEBUGOUT(msg,...) ;
+#endif
 
 void printLibStrErr(int errID)
 {
@@ -78,6 +83,8 @@ void printLibStrErr(int errID)
 */
 bool getStatusReport(libusb_device_handle* udev, StatusReport &report, int timeout)
 {
+  DEBUGOUT("getStatusReport()");
+
   unsigned char buf[StatusReportSize]; //CONTROL responce data
   int ret = libusb_control_transfer(
      udev,
@@ -103,11 +110,14 @@ bool getStatusReport(libusb_device_handle* udev, StatusReport &report, int timeo
     return false;
   }
 
-  //Debug Print Binary
-  //for(int i=0;i<StatusReportSize;i++) {    cout<<std::bitset<8>(buf[i])<<" "; }
+#ifdef DEBUG
+  //Print Binary
+  //for(int i=0;i<StatusReportSize;i++) {    std::cout<<std::bitset<8>(buf[i])<<" "; } std::cout<<std::endl;
 
-  //Debug Print Hex
-  //for(int i=0;i<StatusReportSize;i++) {    cout<<setw(2)<<setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";} cout<<endl;
+  //Print Hex
+  for(int i=0;i<StatusReportSize;i++) {    std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";} std::cout<<std::endl;
+#endif
+
 
   memcpy(&report, buf, sizeof(report));
   return (report.featureRaportID==StatusReport_ID && report.numberOfBytes==StatusReport_nrOfBytes);
@@ -119,6 +129,8 @@ bool getStatusReport(libusb_device_handle* udev, StatusReport &report, int timeo
  * the device is not ready!
 */
 bool isStatusReportNotReady(const StatusReport &report) {
+
+  DEBUGOUT("isStatusReportNotReady");
 
   char report_bytes[StatusReportSize];
   memcpy(&report_bytes, &report, sizeof(report));
@@ -142,6 +154,8 @@ bool isStatusReportNotReady(const StatusReport &report) {
  */
 bool initDevice(libusb_device_handle* udev)
 {
+  DEBUGOUT("initDevice");
+
   if(udev == NULL ) return false;
 
   //  USBHID 128b SET_REPORT Request bmRequestType 0x21 bRequest 0x09 wValue 0x0303 wIndex 0 wLength 64
@@ -201,6 +215,8 @@ bool initDevice(libusb_device_handle* udev)
 */
 struct libusb_device_handle *openDevice(bool initialization)
 {
+  DEBUGOUT("openDevice()");
+
   libusb_device_handle* udev = libusb_open_device_with_vid_pid(0,VENDOR,PRODUCT);
   if(udev==NULL)
   {
@@ -210,6 +226,8 @@ struct libusb_device_handle *openDevice(bool initialization)
 
   //claim device
   {
+    DEBUGOUT("openDevice() claim device");
+
     //Check whether a kernel driver is attached to interface #0. If so, we'll need to detach it.
     if (libusb_kernel_driver_active(udev, 0))
     {
@@ -231,6 +249,8 @@ struct libusb_device_handle *openDevice(bool initialization)
   //init device
   if(initialization)
   {
+    DEBUGOUT("openDevice() initialiazation");
+
     StatusReport report;
     if(!getStatusReport(udev, report))
     {
@@ -266,6 +286,8 @@ struct libusb_device_handle *openDevice(bool initialization)
  */
 bool move(libusb_device_handle * udev, int16_t targetHeight, int timeout)
 {
+  DEBUGOUT("move()",targetHeight);
+
   unsigned char data[StatusReportSize];
   memset (data,0,sizeof(data));
 

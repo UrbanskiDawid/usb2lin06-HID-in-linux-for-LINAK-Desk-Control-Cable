@@ -26,6 +26,7 @@ bool moveTo(  libusb_device_handle* udev, uint16_t target)
 
   while(true)
   {
+    DEBUGOUT("moveTo()",target)
     usb2lin06::move(udev,target);
 
     usleep(200000);
@@ -68,6 +69,7 @@ int main (int argc,char **argv)
   int ret=-1;
 
   int16_t targetHeight=-1;//target height to move, form arg1
+  DEBUGOUT("main() - start");
 
   //get target heigh & print help
   {
@@ -83,16 +85,23 @@ int main (int argc,char **argv)
 
   //init libusb
   {
+    DEBUGOUT("main() - initlibusb");
     if(libusb_init(0)!=0)
     {
       fprintf(stderr, "Error failed to init libusb");
       return 1;
     }
+    #ifdef DEBUG
+    libusb_set_debug(0,LIBUSB_LOG_LEVEL_DEBUG);
+    #else
     libusb_set_debug(0,LIBUSB_LOG_LEVEL_WARNING);//and let usblib be verbose
+    #endif
   }
 
   //find and open device
   {
+    DEBUGOUT("main() - open");
+
     udev = usb2lin06::openDevice();
     if(udev == NULL )
     {
@@ -104,6 +113,8 @@ int main (int argc,char **argv)
   //move to targetHeight
   bool succes=false;
   {
+    DEBUGOUT("main() - moveTo",targetHeight);
+
     if( moveTo(udev,targetHeight) )
     {
       cout<<"success"<<endl;
@@ -115,6 +126,8 @@ int main (int argc,char **argv)
 
   //cleanup
   {
+    DEBUGOUT("main() - close");
+
     libusb_close(udev);
     libusb_exit(0);
   }
