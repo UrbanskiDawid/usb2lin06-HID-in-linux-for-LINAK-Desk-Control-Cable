@@ -140,7 +140,7 @@ bool isStatusReportNotReady(const StatusReport &report) {
     return false; //THIS IS NOT A valid status report!
   }
 
-  for(int i=2;i<StatusReportSize;i++)
+  for(int i=2;i<StatusReportSize-6;i++)/*check bits: 2..58*/
   {
     if(report_bytes[i]!=0) return false;
   }
