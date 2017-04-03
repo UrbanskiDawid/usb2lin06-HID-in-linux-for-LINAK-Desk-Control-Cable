@@ -115,12 +115,34 @@ bool getStatusReport(libusb_device_handle* udev, StatusReport &report, int timeo
   //for(int i=0;i<StatusReportSize;i++) {    std::cout<<std::bitset<8>(buf[i])<<" "; } std::cout<<std::endl;
 
   //Print Hex
-  for(int i=0;i<StatusReportSize;i++) {    std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";} std::cout<<std::endl;
+  std::cout<<"DEBUG: received ";
+  for(int i=0;i<StatusReportSize;i++) {
+    std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";
+  }
+  std::cout<<std::endl;
 #endif
 
-
   memcpy(&report, buf, sizeof(report));
-  return (report.featureRaportID==StatusReport_ID && report.numberOfBytes==StatusReport_nrOfBytes);
+
+
+  bool success=true;
+  DEBUGOUT("getStatusReport() - check received data");
+  {
+    if(report.featureRaportID!=StatusReport_ID)
+    {
+      fprintf(stderr,"ERROR: wrong featureRaportID: '%d' expected: '%d'\n",report.featureRaportID,StatusReport_ID);
+      success=false;
+    }
+
+    const int experimental=0x34;
+    if(report.numberOfBytes!=StatusReport_nrOfBytes && report.numberOfBytes!=experimental)
+    {
+      fprintf(stderr,"ERROR: wrong numberOfBytes: '%d' expected: '%d' or '%d'\n",report.numberOfBytes,StatusReport_nrOfBytes,experimental);
+      success=false;
+    }
+  }
+
+  return success;
 }
 
 /*
@@ -128,8 +150,8 @@ bool getStatusReport(libusb_device_handle* udev, StatusReport &report, int timeo
  * 0x04380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  * the device is not ready!
 */
-bool isStatusReportNotReady(const StatusReport &report) {
-
+bool isStatusReportNotReady(const StatusReport &report)
+{
   DEBUGOUT("isStatusReportNotReady");
 
   char report_bytes[StatusReportSize];
@@ -224,10 +246,8 @@ struct libusb_device_handle *openDevice(bool initialization)
     return NULL;
   }
 
-  //claim device
+  DEBUGOUT("openDevice() claim device");
   {
-    DEBUGOUT("openDevice() claim device");
-
     //Check whether a kernel driver is attached to interface #0. If so, we'll need to detach it.
     if (libusb_kernel_driver_active(udev, 0))
     {
