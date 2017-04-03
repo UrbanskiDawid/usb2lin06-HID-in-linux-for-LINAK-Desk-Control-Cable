@@ -185,7 +185,7 @@ int main (int argc,char **argv)
 
   bool showInfo=true;
 
-  //get args
+  DEBUGOUT("main() - get args");
   {
     showInfo=(argc==1);
 
@@ -215,7 +215,7 @@ int main (int argc,char **argv)
     }
   }
 
-  //init libusb
+  DEBUGOUT("main() - init libusb");
   {
     if(libusb_init(&ctx)!=0)
     {
@@ -229,7 +229,7 @@ int main (int argc,char **argv)
 #endif
   }
 
-  //find and open device
+  DEBUGOUT("main() - find and open device");
   {
     if(showInfo)    printf("Lets look for the Linak device...\n");
 
@@ -242,14 +242,10 @@ int main (int argc,char **argv)
     if(showInfo)    printf("INFO: found device\n");
   }
 
-  //print some device info
+  DEBUGOUT("main() - print some device info");
   {
-    if(showInfo)    printDescriptor(udev);
-  }
+    printDescriptor(udev);
 
-  //read some data
-  if(showInfo)
-  {
     ret = libusb_get_string_descriptor_ascii(udev, 1, buf, sizeof(buf));
     if(ret<0)  { fprintf(stderr,"Error to read string1 err%d \n",ret);}
     else       { cout<<"line 1: '"<<buf<<"'"<<endl; }
@@ -259,12 +255,13 @@ int main (int argc,char **argv)
     else       { cout<<"line 2: '"<<buf<<"'"<<endl; }
   }
 
-  //check if device it ready
+  DEBUGOUT("main() - check if device it ready");
   {
     usb2lin06::StatusReport report;
     if(!usb2lin06::getStatusReport(udev,report))
     {
       cout<<" Error: cant get initial status";
+      return 1;
     }else{
       if(usb2lin06::isStatusReportNotReady(report)){
         cout<<" device is not ready"<<endl;
@@ -275,7 +272,7 @@ int main (int argc,char **argv)
     }
   }
 
-  //getting status SETTINGS_COUNT times
+  DEBUGOUT("main() - getting status SETTINGS_COUNT times");
   {
     usb2lin06::StatusReport report;
     std::string sCOUNT =  std::to_string(SETTINGS_COUNT);
@@ -300,7 +297,7 @@ int main (int argc,char **argv)
     }
   }
 
-  //cleanup
+  DEBUGOUT("main() - cleanup");
   {
     cout<<"DONE";
     libusb_close(udev);
