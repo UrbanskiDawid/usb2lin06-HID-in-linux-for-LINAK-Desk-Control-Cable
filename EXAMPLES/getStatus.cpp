@@ -265,7 +265,11 @@ int main (int argc,char **argv)
     }else{
       if(usb2lin06::isStatusReportNotReady(report)){
         cout<<" device is not ready"<<endl;
-        return 1;
+        if(!usb2lin06::initDevice(udev))
+        {
+          fprintf(stderr,"can't init device!\n");
+          return 1;
+        }
       }else{
         cout<<" device is ready"<<endl;
       }
