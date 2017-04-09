@@ -177,25 +177,19 @@ int main (int argc,char **argv)
 {
   libusb_context *ctx = NULL;
   libusb_device_handle* udev = NULL;
-  unsigned char buf[256];
-  int ret=-1;
 
   int SETTINGS_COUNT = 1000;//how may times should i get status
-  unsigned int SETTINGS_CommadDelay = 1000000;//delay between sending commands [in mikro Sec]
-
-  bool showInfo=true;
+  unsigned int SETTINGS_CommadDelay = 1000000;//delay between sending commands [in micro Sec]
 
   DEBUGOUT("main() - get args");
   {
-    showInfo=(argc==1);
-
     if(argc>1)
     {
       SETTINGS_COUNT=::atoi(argv[1]);
 
       if(SETTINGS_COUNT<0 || SETTINGS_COUNT > 99999)
       {
-        fprintf(stderr, "Error arg1 - remetitions must be an integer in range <0,99999>\n");
+        cerr<<"ERROR: arg1 - remetitions must be an integer in range <0,99999>"<<endl;
         return -1;
       }
     }
@@ -207,7 +201,7 @@ int main (int argc,char **argv)
 
       if(delaySec<0.1f and delaySec>10.0f)
       {
-        fprintf(stderr, "Error arg2 - time [sec] must get greater than 0.1 and less than 10 sec seconds\n");
+        cerr<<"ERROR: arg2 - time [sec] must get greater than 0.1 and less than 10 sec seconds"<<endl;
         return -1;
       }
 
@@ -219,7 +213,7 @@ int main (int argc,char **argv)
   {
     if(libusb_init(&ctx)!=0)
     {
-      fprintf(stderr, "Error failed to init libusb");
+      cerr<<"ERROR: failed to init libusb"<<endl;
       return 1;
     }
     libusb_set_debug(ctx,LIBUSB_LOG_LEVEL);
@@ -227,28 +221,24 @@ int main (int argc,char **argv)
 
   DEBUGOUT("main() - find and open device");
   {
-    if(showInfo)    printf("Lets look for the Linak device...\n");
-
     udev = usb2lin06::openDevice(false);
     if(udev == NULL )
     {
-      fprintf(stderr, "Error NO device");
+      cerr<<"ERROR: NO device"<<endl;
       return 1;
     }
-    if(showInfo)    printf("INFO: found device\n");
   }
 
   DEBUGOUT("main() - print some device info");
   {
     printDescriptor(udev);
-
-    ret = libusb_get_string_descriptor_ascii(udev, 1, buf, sizeof(buf));
-    if(ret<0)  { fprintf(stderr,"Error to read string1 err%d \n",ret);}
-    else       { cout<<"line 1: '"<<buf<<"'"<<endl; }
-
-    ret = libusb_get_string_descriptor_ascii(udev, 2, buf, sizeof(buf));
-    if(ret<0)  { fprintf(stderr,"Error to read string2  err%d \n",ret);}
-    else       { cout<<"line 2: '"<<buf<<"'"<<endl; }
+    unsigned char buf[50];
+    for(int i : {1,2})
+    {
+      int ret = libusb_get_string_descriptor_ascii(udev, i, buf, sizeof(buf));
+      if(ret<0)  { cerr<<"ERROR: to read device decriptor string"<<i<<" err"<<ret<<endl;}
+      else       { cout<<"line "<<i<<": '"<<buf<<"'"<<endl; }
+    }
   }
 
   DEBUGOUT("main() - check if device it ready");
@@ -256,14 +246,14 @@ int main (int argc,char **argv)
     usb2lin06::StatusReport report;
     if(!usb2lin06::getStatusReport(udev,report))
     {
-      cout<<" Error: cant get initial status";
+      cerr<<"ERROR: cant get initial status"<<endl;
       return 1;
     }else{
       if(usb2lin06::isStatusReportNotReady(report)){
         cout<<" device is not ready"<<endl;
         if(!usb2lin06::initDevice(udev))
         {
-          fprintf(stderr,"can't init device!\n");
+          cerr<<"ERROR: can't init device!"<<endl;
           return 1;
         }
       }else{
@@ -280,17 +270,17 @@ int main (int argc,char **argv)
     unsigned int i=1;
     while(true)
     {
+      DEBUGOUT(44,"TEST","!!",42);
       if(usb2lin06::getStatusReport(udev,report))
       {
-        if(usb2lin06::isStatusReportNotReady(report)){
-          cout<<" Error: statusReport -> device not ready"<<endl;
+        if(usb2lin06::isStatusReportNotReady(report))
+        {
+          cerr<<"ERROR: statusReport -> device not ready"<<endl;
         }else{
           cout<<getPreciseTime()<<dec<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
           printStatusReport(report);
         }
       }
-      else
-      { cout<<" Error "<<endl; }
 
       if(i++==SETTINGS_COUNT) break;
       usleep(SETTINGS_CommadDelay);
@@ -299,7 +289,7 @@ int main (int argc,char **argv)
 
   DEBUGOUT("main() - cleanup");
   {
-    cout<<"DONE";
+    cout<<"DONE"<<endl;
     libusb_close(udev);
     libusb_exit(ctx);
   }

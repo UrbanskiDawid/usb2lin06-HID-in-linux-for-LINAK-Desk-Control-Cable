@@ -62,7 +62,6 @@ void printHelp()
       <<"please start program with: arg1 (height)"<<endl;
 }
 
-#define LIBUSB_DEFAULT_TIMEOUT 1000
 int main (int argc,char **argv)
 {
   libusb_context *ctx = NULL;
@@ -70,9 +69,8 @@ int main (int argc,char **argv)
   bool succes=false;
 
   int16_t targetHeight=-1;//target height to move, form arg1
+  
   DEBUGOUT("main() - start");
-
-  //get target heigh & print help
   {
     long long int tmp= atoll(argv[1]);
     targetHeight=tmp;
@@ -88,7 +86,7 @@ int main (int argc,char **argv)
   {
     if(libusb_init(&ctx)!=0)
     {
-      fprintf(stderr, "Error failed to init libusb");
+      cerr<<"Error failed to init libusb";
       return 1;
     }
     libusb_set_debug(ctx,LIBUSB_LOG_LEVEL);
@@ -99,14 +97,13 @@ int main (int argc,char **argv)
     udev = usb2lin06::openDevice();
     if(udev == NULL )
     {
-      fprintf(stderr, "Error NO device");
+      cerr<<"Error NO device";
       return 1;
     }
   }
 
   DEBUGOUT("main() - move to targetHeight",targetHeight);
   {
-
     if( moveTo(udev,targetHeight) )
     {
       cout<<"success"<<endl;
