@@ -165,12 +165,12 @@ bool usb2lin06Controler::initDevice()
 
     int ret = libusb_control_transfer(
       udev,
-      LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,//      0x21,//host to device, Type: class, Recipient: Interface
-      LIBUSB_REQUEST_SET_CONFIGURATION, //0x09 //HID_REPORT_SET
-      0x0303,//Feature3, ReportID: 3
-      0,
+      URB_init.bmRequestType,
+      URB_init.bRequest,
+      URB_init.wValue,
+      URB_init.wIndex,
       buf,
-      StatusReportSize,
+      URB_init.wLength,
       DefaultUSBtimeoutMS
       );
     if(ret!=StatusReportSize)

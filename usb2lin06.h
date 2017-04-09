@@ -138,15 +138,15 @@ struct sCtrlURB
 #define USB2LIN_modeOfOperation_featureReportID 3
 #define USB2LIN_ModeOfOperation_default 4
 
-#define URB_wValue_Init      0x0303
+#define URB_wValue_Init      0x0303 /*?Feature3, ReportID: 3?*/
 #define URB_wValue_GetStatus 0x0304
 #define URB_wValue_Move      0x0305
 
 #define URB_RequestType_SetClassInterface 0x21 /*LIBUSB_RECIPIENT_INTERFACE & LIBUSB_REQUEST_TYPE_CLASS & LIBUSB_ENDPOINT_OUT*/
 #define URB_RequestType_GetClassInterface 0xA1 /*LIBUSB_RECIPIENT_INTERFACE & LIBUSB_REQUEST_TYPE_CLASS & LIBUSB_ENDPOINT_IN*/
 
-#define HID_REPORT_GET   0x01
-#define HID_REPORT_SET   0x09
+#define HID_REPORT_GET   0x01 /*LIBUSB_REQUEST_GET_CONFIGURATION*/
+#define HID_REPORT_SET   0x09 /*LIBUSB_REQUEST_SET_CONFIGURATION*/
 
 const struct sCtrlURB URB_init      = { URB_RequestType_SetClassInterface, HID_REPORT_SET, URB_wValue_Init,      0, StatusReportSize};
 const struct sCtrlURB URB_getStatus = { URB_RequestType_GetClassInterface, HID_REPORT_GET, URB_wValue_GetStatus, 0, StatusReportSize};
