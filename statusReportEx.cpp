@@ -134,6 +134,6 @@ void StatusReportEx::print() const
   if(isStatusReportNotReady())
     cerr<<"ERROR: statusReport -> device not ready"<<endl;
   else
-    cout<<this<<endl;
+    cout<<*this<<endl;
 }
 }//namespace
