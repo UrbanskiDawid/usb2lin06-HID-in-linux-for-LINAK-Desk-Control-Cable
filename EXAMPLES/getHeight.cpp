@@ -5,7 +5,6 @@
 using namespace std;
 
 using usb2lin06::usb2lin06Controler;
-using usb2lin06::isStatusReportNotReady;
 
 /*
  * get current height reported by device status
@@ -16,7 +15,7 @@ bool getCurrentHeight(usb2lin06Controler &controler,float &h)
 
   if(controler.getStatusReport())
   {
-     if(!isStatusReportNotReady(controler.report))
+     if(!controler.report.isStatusReportNotReady())
      {
         h=controler.getHeightInCM();
         return true;

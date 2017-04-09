@@ -31,12 +31,11 @@ void printLibStrErr(int errID)
   }
 }
 
-bool isStatusReportNotReady(const StatusReport &report)
+bool StatusReportEx::isStatusReportNotReady() const
 {
   DEBUGOUT("isStatusReportNotReady");
 
-  char report_bytes[StatusReportSize];
-  memcpy(&report_bytes, &report, sizeof(report));
+  const unsigned char *report_bytes=reinterpret_cast<const unsigned char*>(this); 
   if(report_bytes[0] != StatusReport_ID
      ||
      report_bytes[1] != StatusReport_nrOfBytes) {
@@ -51,6 +50,10 @@ bool isStatusReportNotReady(const StatusReport &report)
   return true;
 }
 
+float StatusReportEx::getHeightCM(float offsetCM) const
+{
+  return offsetCM+ref1.pos*0.01f;
+}
 
 usb2lin06Controler::usb2lin06Controler(bool initialization)
 {
@@ -151,7 +154,7 @@ bool usb2lin06Controler::initDevice()
     return false;
   }
 
-  if(!isStatusReportNotReady(report)) return false;
+  if(!report.isStatusReportNotReady()) return false;
 
   //  USBHID 128b SET_REPORT Request bmRequestType 0x21 bRequest 0x09 wValue 0x0303 wIndex 0 wLength 64
   //  03 04 00 fb 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

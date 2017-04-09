@@ -28,12 +28,21 @@ namespace usb2lin06
 {
 #include "usb2lin06.h"
 
+
+struct StatusReportEx : public StatusReport//NOTE: this is a workaround struct from usb2lin06.h cannot have functions due to usage in kernel
+{
+  float getHeightCM(float offsetCM=0.0f) const;
+
 /*
  * if status report is:
  * 0x04380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  * the device is not ready!
-*/
-bool isStatusReportNotReady(const StatusReport &report);
+ */
+  bool isStatusReportNotReady() const;
+};
+static_assert(sizeof(StatusReportEx)==StatusReportSize,"wrong size of StatusReport");
+
+
 
 
 struct usb2lin06Controler
@@ -43,7 +52,7 @@ usb2lin06Controler(bool initialization=true);
 
 libusb_context *ctx = NULL;
 libusb_device_handle* udev = NULL;
-StatusReport report;
+StatusReportEx report;
 
 /*
  * Get currnet status from device

@@ -8,6 +8,9 @@
 #include "usb2lin06Controler.h"
 
 using namespace std;
+
+using StatusReport = usb2lin06::StatusReportEx;
+
 /*
  * just some universal device descripor print out
  */
@@ -103,7 +106,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::Diagnostic &a)
   <<(int)a.event[5] <<SeparatorEnd;
 }
 
-std::ostream& operator << (std::ostream &o, const usb2lin06::StatusReport &a) {
+std::ostream& operator << (std::ostream &o, const StatusReport &a) {
 
   auto handsetToStr = [](const uint16_t &h)-> const char*
   {
@@ -125,7 +128,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::StatusReport &a) {
 //  <<"ID:"  << SeparatorStart <<setw(2)<<(int)a.featureRaportID <<SeparatorEnd<<SeparatorFields
 //  <<"bytes:"<<SeparatorStart <<setw(2)<<(int)a.numberOfBytes   <<SeparatorEnd <<SeparatorFields
   <<a.validFlag;
-  if(a.validFlag.ID00_Ref1_pos_stat_speed) o<<SeparatorFields<<"ref1"<< a.ref1;
+  if(a.validFlag.ID00_Ref1_pos_stat_speed) {o<<SeparatorFields<<"ref1"<< a.ref1<< " HEIGHT:"<<a.getHeightCM()<<"cm";}
   if(a.validFlag.ID01_Ref2_pos_stat_speed) o<<SeparatorFields<<"ref2"<< a.ref2;
   if(a.validFlag.ID02_Ref3_pos_stat_speed) o<<SeparatorFields<<"ref3"<< a.ref3;
   if(a.validFlag.ID03_Ref4_pos_stat_speed) o<<SeparatorFields<<"ref4"<< a.ref4;
@@ -146,9 +149,9 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::StatusReport &a) {
   o<<SeparatorEnd;
 }
 
-void printStatusReport(const usb2lin06::StatusReport &report)
+void printStatusReport(const StatusReport &report)
 {
-  if(usb2lin06::isStatusReportNotReady(report))
+  if(report.isStatusReportNotReady())
     cerr<<"ERROR: statusReport -> device not ready"<<endl;
   else
     cout<<report<<endl;
@@ -231,7 +234,7 @@ int main (int argc,char **argv)
       cerr<<"ERROR: cant get initial status"<<endl;
       return 1;
     }else{
-      if(usb2lin06::isStatusReportNotReady(controler.report)){
+      if(controler.report.isStatusReportNotReady()){
         cout<<" device is not ready"<<endl;
         if(!controler.initDevice())
         {
