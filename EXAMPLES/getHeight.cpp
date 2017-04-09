@@ -29,7 +29,6 @@ bool getCurrentHeight(libusb_device_handle* udev,float &h)
   return false;
 }
 
-#define LIBUSB_DEFAULT_TIMEOUT 1000
 int main (int argc,char **argv)
 {
   libusb_context *ctx = NULL;
@@ -39,10 +38,9 @@ int main (int argc,char **argv)
   {
     if(libusb_init(&ctx)!=0)
     {
-      fprintf(stderr, "Error failed to init libusb");
+      cerr<<"ERROR: failed to init libusb"<<endl;
       return 1;
     }
-
     libusb_set_debug(ctx,LIBUSB_LOG_LEVEL);
   }
 
@@ -51,24 +49,22 @@ int main (int argc,char **argv)
     udev = usb2lin06::openDevice();
     if(udev == NULL )
     {
-      fprintf(stderr, "Error NO device");
+      cerr<<"ERROR: NO device"<<endl;
       return 1;
     }
   }
 
   DEBUGOUT("main() - getHeigh");
   {
-
     float curHeight = 1.0f;
     if(!getCurrentHeight(udev,curHeight))
     {
-      fprintf(stderr,"Error getStatus\n");
+      cerr<<"ERROR: getStatus"<<endl;
     }else{
       cout<<"current height: "<<setprecision(1)<<dec<<fixed<<curHeight<<"cm"<<endl;
     }
   }
 
-  //cleanup
   DEBUGOUT("main() - cleanup");
   {
     libusb_close(udev);
