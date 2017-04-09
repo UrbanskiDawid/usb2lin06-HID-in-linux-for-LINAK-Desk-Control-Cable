@@ -5,33 +5,32 @@
 #include <unistd.h>  //usleep
 #include <sstream>  //std::ostringstream
 #include <math.h>
-#include "../usb2lin06.hpp"
+#include "usb2lin06Controler.h"
 
 using namespace std;
-
 
 /*
  * WARNING: dangerous
  * this will move towards goal
  * TODO: stop if cannot move
  */
-bool moveTo(  libusb_device_handle* udev, uint16_t target)
+bool moveTo(usb2lin06::usb2lin06Controler & controler, uint16_t target)
 {
-  usb2lin06::StatusReport r;
+  usb2lin06::StatusReport &r = controler.report;
 
   const unsigned int max_a = 3; unsigned int a = max_a;//stuck protection
-  uint16_t oldH=0;
+  uint16_t oldH=0;  
 
   const int epsilon = 13;//this seems to be move prcision
 
   while(true)
   {
     DEBUGOUT("moveTo()",target)
-    usb2lin06::move(udev,target);
+    controler.move(target);
 
     usleep(200000);
 
-    if( usb2lin06::getStatusReport(udev,r) )
+    if( controler.getStatusReport() )
     {
       double distance = r.ref1cnt-r.ref1.pos;
       double delta    = oldH-r.ref1.pos;
@@ -64,8 +63,6 @@ void printHelp()
 
 int main (int argc,char **argv)
 {
-  libusb_context *ctx = NULL;
-  libusb_device_handle* udev = NULL;
   bool succes=false;
 
   int16_t targetHeight=-1;//target height to move, form arg1
@@ -82,29 +79,12 @@ int main (int argc,char **argv)
     }
   }
 
-  DEBUGOUT("main() - initlibusb");
-  {
-    if(libusb_init(&ctx)!=0)
-    {
-      cerr<<"Error failed to init libusb";
-      return 1;
-    }
-    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL);
-  }
-
-  DEBUGOUT("main() - find and open device");
-  {
-    udev = usb2lin06::openDevice();
-    if(udev == NULL )
-    {
-      cerr<<"Error NO device";
-      return 1;
-    }
-  }
+  DEBUGOUT("main() - init");
+  usb2lin06::usb2lin06Controler controler;
 
   DEBUGOUT("main() - move to targetHeight",targetHeight);
   {
-    if( moveTo(udev,targetHeight) )
+    if( moveTo(controler,targetHeight) )
     {
       cout<<"success"<<endl;
       succes=true;
@@ -113,11 +93,9 @@ int main (int argc,char **argv)
       cout<<"failed"<<endl;
   }
 
-  DEBUGOUT("main() - close");
+  DEBUGOUT("main() - end");
   {
-    libusb_close(udev);
-    libusb_exit(ctx);
+    cout<<"DONE"<<endl;
   }
-
   return (succes ? 0 : -1);
 }

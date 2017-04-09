@@ -142,20 +142,22 @@ struct sCtrlURB
 #define URB_wValue_GetStatus 0x0304
 #define URB_wValue_Move      0x0305
 
+#define URB_RequestType_SetClassInterface 0x21 /*LIBUSB_RECIPIENT_INTERFACE & LIBUSB_REQUEST_TYPE_CLASS & LIBUSB_ENDPOINT_OUT*/
+#define URB_RequestType_GetClassInterface 0xA1 /*LIBUSB_RECIPIENT_INTERFACE & LIBUSB_REQUEST_TYPE_CLASS & LIBUSB_ENDPOINT_IN*/
 
-const struct sCtrlURB URB_init      = { 0x21, 9/*HID_REPORT_SET*/, URB_wValue_Init,      0, StatusReportSize};
-const struct sCtrlURB URB_getStatus = { 0xA1, 1/*HID_REPORT_GET*/, URB_wValue_GetStatus, 0, StatusReportSize};
-const struct sCtrlURB URB_move      = { 0x21, 9/*HID_REPORT_SET*/, URB_wValue_Move,      0, StatusReportSize};
+#define HID_REPORT_GET   0x01
+#define HID_REPORT_SET   0x09
+
+const struct sCtrlURB URB_init      = { URB_RequestType_SetClassInterface, HID_REPORT_SET, URB_wValue_Init,      0, StatusReportSize};
+const struct sCtrlURB URB_getStatus = { URB_RequestType_GetClassInterface, HID_REPORT_GET, URB_wValue_GetStatus, 0, StatusReportSize};
+const struct sCtrlURB URB_move      = { URB_RequestType_SetClassInterface, HID_REPORT_SET, URB_wValue_Move,      0, StatusReportSize};
 
 #define DefaultUSBtimeoutMS 1000
 
-void printLibStrErr(int errID);
-
-//height - is a 16 signed integer with the height in 1/10 mm with 0 as lowest height of actuators together with 8 bit status information
-//TODO: ?8 bit status information?
+//height - is a 16 signed integer with the height in 1/10 mm with 0 as lowest height of actuators
 #define HEIGHT_moveDownwards 0x7fff
 #define HEIGHT_moveUpwards   0x8000
 #define HEIGHT_moveEnd       0x8001
 //------
 
-#endif
+#endif //usb2lin06_h

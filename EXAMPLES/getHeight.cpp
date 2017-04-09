@@ -1,29 +1,26 @@
 #include <iostream>
-#include <vector>
-#include <string.h>     // std::string, memcpy
 #include <iomanip>      // std::setw
-#include <unistd.h>  //usleep
-#include <sstream>  //std::ostringstream
-#include <math.h>
-#include "../usb2lin06.hpp"
+#include "usb2lin06Controler.h"
 
 using namespace std;
 
+using usb2lin06::usb2lin06Controler;
+using usb2lin06::isStatusReportNotReady;
 
 /*
  * get current height reported by device status
  */
-bool getCurrentHeight(libusb_device_handle* udev,float &h)
+bool getCurrentHeight(usb2lin06Controler &controler,float &h)
 {
   h=-1.0f;
-  usb2lin06::StatusReport report;
 
-  if(usb2lin06::getStatusReport(udev,report))
+  if(controler.getStatusReport())
   {
-     if(isStatusReportNotReady(report)) return false;
-
-     h=usb2lin06::getHeightInCM(report);
-     return true;
+     if(!isStatusReportNotReady(controler.report))
+     {
+        h=controler.getHeightInCM();
+        return true;
+     }
   }
 
   return false;
@@ -31,33 +28,13 @@ bool getCurrentHeight(libusb_device_handle* udev,float &h)
 
 int main (int argc,char **argv)
 {
-  libusb_context *ctx = NULL;
-  libusb_device_handle* udev = NULL;
-
-  DEBUGOUT("main() - init libusb");
-  {
-    if(libusb_init(&ctx)!=0)
-    {
-      cerr<<"ERROR: failed to init libusb"<<endl;
-      return 1;
-    }
-    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL);
-  }
-
-  DEBUGOUT("main() - find and openDevice");
-  {
-    udev = usb2lin06::openDevice();
-    if(udev == NULL )
-    {
-      cerr<<"ERROR: NO device"<<endl;
-      return 1;
-    }
-  }
+  DEBUGOUT("main() - init");
+  usb2lin06Controler controler;
 
   DEBUGOUT("main() - getHeigh");
   {
     float curHeight = 1.0f;
-    if(!getCurrentHeight(udev,curHeight))
+    if(!getCurrentHeight(controler,curHeight))
     {
       cerr<<"ERROR: getStatus"<<endl;
     }else{
@@ -65,10 +42,9 @@ int main (int argc,char **argv)
     }
   }
 
-  DEBUGOUT("main() - cleanup");
+  DEBUGOUT("main() - end");
   {
-    libusb_close(udev);
-    libusb_exit(ctx);
+    cout<<"DONE"<<endl;
   }
   return 0;
 }

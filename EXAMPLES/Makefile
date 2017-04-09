@@ -2,6 +2,7 @@ CC=g++
 CFLAGS=-std=c++1y
 LFLAGS=-lstdc++ -lusb-1.0
 
+SRC_DIR=..
 
 default:
 	@echo this is Main Make file
@@ -16,16 +17,20 @@ check:
 
 	@echo -n "usb device: "
 	@lsusb -v -d 12d3:0002 && echo "OK" || echo "ERROR";
-build:
-	$(CC) $(DEBUG) $(CFLAGS) getStatus.cpp -o example-getStatus $(LFLAGS)
-	$(CC) $(DEBUG) $(CFLAGS) moveTo.cpp -o example-moveTo $(LFLAGS)
-	$(CC) $(DEBUG) $(CFLAGS) getHeight.cpp -o example-getHeight $(LFLAGS)
+
+usb2lin06Controler:
+	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) -c ../usb2lin06Controler.cpp -o usb2lin06Controler.o
+
+build: usb2lin06Controler
+	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) getStatus.cpp -I$(SRC_DIR) usb2lin06Controler.o -o example-getStatus 
+	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) moveTo.cpp    -I$(SRC_DIR) usb2lin06Controler.o -o example-moveTo
+	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) getHeight.cpp -I$(SRC_DIR) usb2lin06Controler.o -o example-getHeight 
 
 debug: DEBUG = -DDEBUG
 debug: build
 	
 clean:
-	rm -f example-moveTo example-getStatus example-getHeight
+	rm -f example-moveTo example-getStatus example-getHeight usb2lin06Controler.o
 run:
 	sudo ./example-getStatus
 

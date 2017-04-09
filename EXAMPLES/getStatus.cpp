@@ -5,7 +5,7 @@
 #include <unistd.h>  //usleep
 #include <sstream>  //std::ostringstream
 
-#include "../usb2lin06.hpp"
+#include "usb2lin06Controler.h"
 
 using namespace std;
 /*
@@ -148,8 +148,10 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::StatusReport &a) {
 
 void printStatusReport(const usb2lin06::StatusReport &report)
 {
-  cout<<report<<endl;
-  return;
+  if(usb2lin06::isStatusReportNotReady(report))
+    cerr<<"ERROR: statusReport -> device not ready"<<endl;
+  else
+    cout<<report<<endl;
 }
 
 /*
@@ -175,9 +177,6 @@ std::string getPreciseTime()
 
 int main (int argc,char **argv)
 {
-  libusb_context *ctx = NULL;
-  libusb_device_handle* udev = NULL;
-
   int SETTINGS_COUNT = 1000;//how may times should i get status
   unsigned int SETTINGS_CommadDelay = 1000000;//delay between sending commands [in micro Sec]
 
@@ -209,33 +208,17 @@ int main (int argc,char **argv)
     }
   }
 
-  DEBUGOUT("main() - init libusb");
-  {
-    if(libusb_init(&ctx)!=0)
-    {
-      cerr<<"ERROR: failed to init libusb"<<endl;
-      return 1;
-    }
-    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL);
-  }
-
-  DEBUGOUT("main() - find and open device");
-  {
-    udev = usb2lin06::openDevice(false);
-    if(udev == NULL )
-    {
-      cerr<<"ERROR: NO device"<<endl;
-      return 1;
-    }
-  }
+  DEBUGOUT("main() - init");
+  usb2lin06::usb2lin06Controler controler(false);
 
   DEBUGOUT("main() - print some device info");
   {
-    printDescriptor(udev);
+    printDescriptor(controler.udev);
+
     unsigned char buf[50];
     for(int i : {1,2})
     {
-      int ret = libusb_get_string_descriptor_ascii(udev, i, buf, sizeof(buf));
+      int ret = libusb_get_string_descriptor_ascii(controler.udev, i, buf, sizeof(buf));
       if(ret<0)  { cerr<<"ERROR: to read device decriptor string"<<i<<" err"<<ret<<endl;}
       else       { cout<<"line "<<i<<": '"<<buf<<"'"<<endl; }
     }
@@ -243,15 +226,14 @@ int main (int argc,char **argv)
 
   DEBUGOUT("main() - check if device it ready");
   {
-    usb2lin06::StatusReport report;
-    if(!usb2lin06::getStatusReport(udev,report))
+    if(!controler.getStatusReport())
     {
       cerr<<"ERROR: cant get initial status"<<endl;
       return 1;
     }else{
-      if(usb2lin06::isStatusReportNotReady(report)){
+      if(usb2lin06::isStatusReportNotReady(controler.report)){
         cout<<" device is not ready"<<endl;
-        if(!usb2lin06::initDevice(udev))
+        if(!controler.initDevice())
         {
           cerr<<"ERROR: can't init device!"<<endl;
           return 1;
@@ -264,22 +246,15 @@ int main (int argc,char **argv)
 
   DEBUGOUT("main() - getting status SETTINGS_COUNT times");
   {
-    usb2lin06::StatusReport report;
-    std::string sCOUNT =  std::to_string(SETTINGS_COUNT);
+    std::string sCOUNT = std::to_string(SETTINGS_COUNT);
 
     unsigned int i=1;
     while(true)
     {
-      DEBUGOUT(44,"TEST","!!",42);
-      if(usb2lin06::getStatusReport(udev,report))
-      {
-        if(usb2lin06::isStatusReportNotReady(report))
-        {
-          cerr<<"ERROR: statusReport -> device not ready"<<endl;
-        }else{
+      if(controler.getStatusReport())
+      {      
           cout<<getPreciseTime()<<dec<<" ["<<setfill('0')<<setw(sCOUNT.length())<<i<<"/"<<sCOUNT<<"] ";
-          printStatusReport(report);
-        }
+          printStatusReport(controler.report);        
       }
 
       if(i++==SETTINGS_COUNT) break;
@@ -287,11 +262,9 @@ int main (int argc,char **argv)
     }
   }
 
-  DEBUGOUT("main() - cleanup");
+  DEBUGOUT("main() - end");
   {
     cout<<"DONE"<<endl;
-    libusb_close(udev);
-    libusb_exit(ctx);
   }
   return 0;
 }
