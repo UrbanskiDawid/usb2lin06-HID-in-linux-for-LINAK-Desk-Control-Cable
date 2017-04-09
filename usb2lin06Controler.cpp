@@ -16,15 +16,18 @@
 namespace usb2lin06
 {
 
+using std::cerr;
+using std::endl;
+
 void printLibStrErr(int errID)
 {
   switch(errID)
   {
-    case LIBUSB_ERROR_TIMEOUT:   fprintf(stderr,"ERROR the transfer timed out (and populates transferred)"); break;
-    case LIBUSB_ERROR_PIPE:      fprintf(stderr,"the endpoint halted"); break;
-    case LIBUSB_ERROR_OVERFLOW:  fprintf(stderr,"the device offered more data, see Packets and overflows"); break;
-    case LIBUSB_ERROR_NO_DEVICE: fprintf(stderr,"the device has been disconnected"); break;
-    default:                     fprintf(stderr,"another LIBUSB_ERROR code on other failures %d",errID);
+    case LIBUSB_ERROR_TIMEOUT:   cerr<<"ERROR the transfer timed out (and populates transferred)"<<endl; break;
+    case LIBUSB_ERROR_PIPE:      cerr<<"the endpoint halted"<<endl; break;
+    case LIBUSB_ERROR_OVERFLOW:  cerr<<"the device offered more data, see Packets and overflows"<<endl; break;
+    case LIBUSB_ERROR_NO_DEVICE: cerr<<"the device has been disconnected"<<endl; break;
+    default:                     cerr<<"another LIBUSB_ERROR code on other failures"<<errID<<endl; break;
   }
 }
 
@@ -92,7 +95,7 @@ bool usb2lin06Controler::getStatusReport()
      );
   if(ret!=StatusReportSize)
   {
-    fprintf(stderr,"fail to get status request err %d!=%d\n",ret,StatusReportSize);
+    cerr<<"fail to get status request err "<<ret<<"!="<<StatusReportSize<<endl;
     printLibStrErr(ret);
     /* Broken pipe is EPIPE. That means the device sent a STALL to your control
     message. If you don't know what a STALL is, check the USB specs.
@@ -117,14 +120,14 @@ bool usb2lin06Controler::getStatusReport()
   {
     if(report.featureRaportID!=StatusReport_ID)
     {
-      fprintf(stderr,"ERROR: wrong featureRaportID: '%d' expected: '%d'\n",report.featureRaportID,StatusReport_ID);
+      cerr<<"ERROR: wrong featureRaportID: '"<<report.featureRaportID<<"' expected: '"<<StatusReport_ID<<"'"<<endl;
       success=false;
     }
 
     const int experimental=0x34;
     if(report.numberOfBytes!=StatusReport_nrOfBytes && report.numberOfBytes!=experimental)
     {
-      fprintf(stderr,"ERROR: wrong numberOfBytes: '%d' expected: '%d' or '%d'\n",report.numberOfBytes,StatusReport_nrOfBytes,experimental);
+      cerr<<"ERROR: wrong numberOfBytes: '"<<report.numberOfBytes<<"' expected: '"<<StatusReport_nrOfBytes<<"' or '"<<experimental<<"'"<<endl;
       success=false;
     }
   }
@@ -140,7 +143,7 @@ bool usb2lin06Controler::initDevice()
 
   if(!getStatusReport())
   {
-    fprintf(stderr, "Error geting init status report!\n");
+    cerr<<"Error geting init status report!"<<endl;
     return false;
   }
 
@@ -168,7 +171,7 @@ bool usb2lin06Controler::initDevice()
       );
     if(ret!=StatusReportSize)
     {
-      fprintf(stderr,"device not ready - initializing failed on step1 ret=%d",ret);
+      cerr<<"ERROR: device not ready - initializing failed on step1 ret="<<ret<<endl;
       printLibStrErr(ret);
       return false;
     }
@@ -181,7 +184,7 @@ bool usb2lin06Controler::initDevice()
   {
     if(!moveEnd())
     {
-      fprintf(stderr,"device not ready - initializing failed on step2 (moveEnd)");
+      cerr<<"ERROR: device not ready - initializing failed on step2 (moveEnd)"<<endl;
       return false;
     }
   }
@@ -199,7 +202,7 @@ bool usb2lin06Controler::openDevice()
   udev = libusb_open_device_with_vid_pid(0,VENDOR,PRODUCT);
   if(udev==NULL)
   {
-    fprintf(stderr, "Error cant find usb device %d %d\n",VENDOR,PRODUCT);
+    cerr<<"ERROR: cant find usb device vendor:"<<VENDOR<<" product:"<<PRODUCT<<endl;
     return false;
   }
 
@@ -210,7 +213,7 @@ bool usb2lin06Controler::openDevice()
     {
       if (libusb_detach_kernel_driver(udev, 0) != 0)
       {
-        fprintf(stderr, "Error detaching kernel driver.\n");
+        cerr<<"ERROR: detaching kernel driver."<<endl;
         return false;
       }
     }
@@ -218,7 +221,7 @@ bool usb2lin06Controler::openDevice()
     // Claim interface #0
     if (libusb_claim_interface(udev, 0) != 0)
     {
-      fprintf(stderr, "Error claiming interface.\n");
+      cerr<<"ERROR: claiming interface."<<endl;
       return false;
     }
   }
