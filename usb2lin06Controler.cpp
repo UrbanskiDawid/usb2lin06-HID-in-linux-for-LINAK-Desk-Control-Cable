@@ -63,7 +63,11 @@ usb2lin06Controler::usb2lin06Controler(bool initialization)
   DEBUGOUT("usb2lin06Controler() - find and open device");
   {
     if(!openDevice())
-    throw std::runtime_error("can't open device");
+    {
+      libusb_exit(ctx);
+      ctx=NULL;
+      throw std::runtime_error("can't open device");
+    }    
   }
 
   if(initialization) initDevice();  
