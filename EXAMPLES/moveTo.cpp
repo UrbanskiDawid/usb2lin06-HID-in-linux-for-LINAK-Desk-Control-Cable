@@ -91,11 +91,7 @@ int main (int argc,char **argv)
       fprintf(stderr, "Error failed to init libusb");
       return 1;
     }
-    #ifdef DEBUG
-    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL_DEBUG);
-    #else
-    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL_WARNING);//and let usblib be verbose
-    #endif
+    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL);
   }
 
   DEBUGOUT("main() - find and open device");

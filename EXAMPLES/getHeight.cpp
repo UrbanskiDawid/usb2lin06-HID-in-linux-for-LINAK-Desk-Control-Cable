@@ -34,7 +34,6 @@ int main (int argc,char **argv)
 {
   libusb_context *ctx = NULL;
   libusb_device_handle* udev = NULL;
-  unsigned char buf[256];
 
   DEBUGOUT("main() - init libusb");
   {
@@ -44,11 +43,7 @@ int main (int argc,char **argv)
       return 1;
     }
 
-    #ifdef DEBUG
-    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL_DEBUG);
-    #else
-    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL_WARNING);
-    #endif
+    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL);
   }
 
   DEBUGOUT("main() - find and openDevice");

@@ -41,8 +41,10 @@ bool moveEnd (libusb_device_handle * udev, int timeout=DefaultUSBtimeoutMS);
 
 #ifdef DEBUG
   #define DEBUGOUT(...) fprintf(stderr,"DEBUG %s:%d %s\n",__FILE__, __LINE__,__VA_ARGS__);
+  #define LIBUSB_LOG_LEVEL LIBUSB_LOG_LEVEL_DEBUG
 #else
   #define DEBUGOUT(msg,...) ;
+  #define LIBUSB_LOG_LEVEL LIBUSB_LOG_LEVEL_WARNING
 #endif
 
 void printLibStrErr(int errID)
