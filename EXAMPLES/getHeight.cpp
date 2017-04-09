@@ -8,15 +8,17 @@ using usb2lin06::usb2lin06Controler;
 /*
  * get current height reported by device status
  */
-bool getCurrentHeight(usb2lin06Controler &controler,float &h)
+bool getCurrentHeight(usb2lin06Controler &controler,RefControlInput &hRaw, float &hCM)
 {
-  h=-1.0f;
+  hCM=-1.0f;
+  hRaw=-1;
 
   if(controler.getStatusReport())
   {
      if(!controler.report.isStatusReportNotReady())
      {
-        h=controler.getHeightInCM();
+        hRaw=controler.getHeight();
+        hCM=controler.getHeightInCM();
         return true;
      }
   }
@@ -31,12 +33,16 @@ int main (int argc,char **argv)
 
   DEBUGOUT("main() - getHeigh");
   {
-    float curHeight = 1.0f;
-    if(!getCurrentHeight(controler,curHeight))
+    RefControlInput curHeight_Raw = 0;
+    float curHeight_CM = 1.0f;
+    if(!getCurrentHeight(controler,curHeight_Raw,curHeight_CM))
     {
       cerr<<"ERROR: getStatus"<<endl;
     }else{
-      cout<<"current height: "<<setprecision(1)<<dec<<fixed<<curHeight<<"cm"<<endl;
+      cout<<"current height: "
+        <<curHeight_Raw
+        <<" "<<setprecision(1)<<dec<<fixed<<curHeight_CM<<"cm"
+        <<endl;
     }
   }
 
