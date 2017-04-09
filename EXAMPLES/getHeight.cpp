@@ -3,7 +3,6 @@
 #include "usb2lin06Controler.h"
 
 using namespace std;
-
 using usb2lin06::usb2lin06Controler;
 
 /*

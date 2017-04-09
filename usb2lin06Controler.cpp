@@ -30,31 +30,6 @@ void printLibStrErr(int errID)
     default:                     cerr<<"another LIBUSB_ERROR code on other failures"<<errID<<endl; break;
   }
 }
-
-bool StatusReportEx::isStatusReportNotReady() const
-{
-  DEBUGOUT("isStatusReportNotReady");
-
-  const unsigned char *report_bytes=reinterpret_cast<const unsigned char*>(this); 
-  if(report_bytes[0] != StatusReport_ID
-     ||
-     report_bytes[1] != StatusReport_nrOfBytes) {
-    return false; //THIS IS NOT A valid status report!
-  }
-
-  for(int i=2;i<StatusReportSize-6;i++)/*check bits: 2..58*/
-  {
-    if(report_bytes[i]!=0) return false;
-  }
-
-  return true;
-}
-
-float StatusReportEx::getHeightCM(float offsetCM) const
-{
-  return offsetCM+ref1.pos*0.01f;
-}
-
 usb2lin06Controler::usb2lin06Controler(bool initialization)
 {
   DEBUGOUT("usb2lin06Controler()");
@@ -102,7 +77,7 @@ bool usb2lin06Controler::getStatusReport()
      );
   if(ret!=StatusReportSize)
   {
-    cerr<<"fail to get status request err "<<ret<<"!="<<StatusReportSize<<endl;
+    cerr<<"ERROR: failed to get statusReport. "<<ret<<"!="<<StatusReportSize<<endl;
     printLibStrErr(ret);
     /* Broken pipe is EPIPE. That means the device sent a STALL to your control
     message. If you don't know what a STALL is, check the USB specs.
@@ -142,6 +117,7 @@ bool usb2lin06Controler::getStatusReport()
   return success;
 }
 
+
 bool usb2lin06Controler::initDevice()
 {
   DEBUGOUT("initDevice()");
@@ -150,7 +126,7 @@ bool usb2lin06Controler::initDevice()
 
   if(!getStatusReport())
   {
-    cerr<<"Error geting init status report!"<<endl;
+    cerr<<"ERROR geting init status report!"<<endl;
     return false;
   }
 
@@ -263,47 +239,32 @@ bool usb2lin06Controler::move(int16_t targetHeight)
   return (ret==StatusReportSize);
 }
 
-/*
- * Move one step down
- * this will send:
- * 05 ff 7f ff 7f ff 7f ff 7f 00
-*/
+
 bool usb2lin06Controler::moveDown()
 {
   return move(HEIGHT_moveDownwards);
 }
 
-/*
- * Move one step up
- * this will send:
- * 05 00 80 00 80 00 80 00 80 00
-*/
+
 bool usb2lin06Controler::moveUp()
 {
   return move(HEIGHT_moveUpwards);
 }
 
-/*
- * End Movment sequence
- * this will send:
- * 05 01 80 01 80 01 80 01 80 00
-*/
+
+
 bool usb2lin06Controler::moveEnd()
 {
   return move(HEIGHT_moveEnd);
 }
 
-/*
- * this will calculate height form StatusReport
- */
+
 int usb2lin06Controler::getHeight()
 {
   return (int)report.ref1.pos;
 }
 
-/*
- * get height in centimeters, rough - precision: 1decimal points
- */
+
 float usb2lin06Controler::getHeightInCM()
 {
   return (float)report.ref1.pos/98.0f;

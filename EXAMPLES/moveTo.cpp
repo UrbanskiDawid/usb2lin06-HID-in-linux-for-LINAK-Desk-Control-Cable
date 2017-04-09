@@ -16,7 +16,7 @@ using namespace std;
  */
 bool moveTo(usb2lin06::usb2lin06Controler & controler, uint16_t target)
 {
-  usb2lin06::StatusReport &r = controler.report;
+  const usb2lin06::StatusReportEx &r = controler.report;
 
   const unsigned int max_a = 3; unsigned int a = max_a;//stuck protection
   uint16_t oldH=0;  
