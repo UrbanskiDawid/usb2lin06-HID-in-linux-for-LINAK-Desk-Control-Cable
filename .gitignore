@@ -2,3 +2,4 @@ example-getHeight
 example-getStatus
 example-moveTo
 .*
+*.o
