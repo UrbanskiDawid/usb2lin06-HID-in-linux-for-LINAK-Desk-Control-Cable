@@ -30,6 +30,7 @@ void printLibStrErr(int errID)
     default:                     cerr<<"another LIBUSB_ERROR code on other failures"<<errID<<endl; break;
   }
 }
+
 usb2lin06Controler::usb2lin06Controler(bool initialization)
 {
   DEBUGOUT("usb2lin06Controler()");
@@ -137,10 +138,10 @@ bool usb2lin06Controler::initDevice()
   {
     unsigned char buf[StatusReportSize];
     memset(buf, 0, StatusReportSize);
-    buf[0]=USB2LIN_modeOfOperation_featureReportID; //0x03 Feature report ID = 3
-    buf[1]=USB2LIN_ModeOfOperation_default;         //0x04 mode of operation
-    buf[2]=0x00;                                    //?
-    buf[3]=0xfb;                                    //?
+    buf[0]=USB2LIN_featureReportID_modeOfOperation;         //0x03 Feature report ID = 3
+    buf[1]=USB2LIN_featureReportID_modeOfOperation_default; //0x04 mode of operation
+    buf[2]=0x00;                                            //?
+    buf[3]=0xfb;                                            //?
 
     int ret = libusb_control_transfer(
       udev,
@@ -220,7 +221,7 @@ bool usb2lin06Controler::move(int16_t targetHeight)
   unsigned char data[StatusReportSize];
   memset (data,0,sizeof(data));
 
-  data[0]=0x05;
+  data[0]=USB2LIN_featureReportID_controlCBC;
   memcpy( data+1, &targetHeight, sizeof(targetHeight) );
   memcpy( data+3, &targetHeight, sizeof(targetHeight) );
   memcpy( data+5, &targetHeight, sizeof(targetHeight) );
@@ -250,7 +251,6 @@ bool usb2lin06Controler::moveUp()
 {
   return move(HEIGHT_moveUpwards);
 }
-
 
 
 bool usb2lin06Controler::moveEnd()

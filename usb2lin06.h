@@ -135,12 +135,18 @@ struct sCtrlURB
 };
 
 //========================================================================================================
-#define USB2LIN_modeOfOperation_featureReportID 3
-#define USB2LIN_ModeOfOperation_default 4
+#define USB2LIN_featureReportID_modeOfOperation 3
+#define USB2LIN_featureReportID_getLINdata 4
+#define USB2LIN_featureReportID_controlCBC 5
+#define USB2LIN_featureReportID_controlTD 6
+#define USB2LIN_featureReportID_controlCBD_TD 8 /*using ID37/38*/
+#define USB2LIN_featureReportID_getLINdataExtended 9
 
-#define URB_wValue_Init      0x0303 /*?Feature3, ReportID: 3?*/
-#define URB_wValue_GetStatus 0x0304
-#define URB_wValue_Move      0x0305
+#define USB2LIN_featureReportID_modeOfOperation_default 4
+
+#define URB_wValue_Init      0x0303 /*?Feature3, ReportID: 3 - USB2LIN_featureReportID_modeOfOperation?*/
+#define URB_wValue_GetStatus 0x0304 /*?Feature3, ReportID: 4 - USB2LIN_featureReportID_getLINdata?*/
+#define URB_wValue_Move      0x0305 /*?Feature3, ReportID: 5 - USB2LIN_featureReportID_controlCBC?*/
 
 #define URB_RequestType_SetClassInterface 0x21 /*LIBUSB_RECIPIENT_INTERFACE & LIBUSB_REQUEST_TYPE_CLASS & LIBUSB_ENDPOINT_OUT*/
 #define URB_RequestType_GetClassInterface 0xA1 /*LIBUSB_RECIPIENT_INTERFACE & LIBUSB_REQUEST_TYPE_CLASS & LIBUSB_ENDPOINT_IN*/
