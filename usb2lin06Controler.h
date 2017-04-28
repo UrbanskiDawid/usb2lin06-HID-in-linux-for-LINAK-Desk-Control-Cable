@@ -65,6 +65,8 @@ StatusReportEx report;
 */
 bool getStatusReport();
 
+/*Experimental*/
+bool getStatusReportEx(unsigned char *);
 /*
 [ 6725.772231] usb 1-1.2: new full-speed USB device number 6 using ehci-pci
 [ 6725.867477] usb 1-1.2: New USB device found, idVendor=12d3, idProduct=0002

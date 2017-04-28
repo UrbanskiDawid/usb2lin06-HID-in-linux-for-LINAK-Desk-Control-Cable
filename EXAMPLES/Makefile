@@ -29,7 +29,7 @@ build: usb2lin06Controler
 	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) moveTo.cpp    -I$(SRC_DIR) usb2lin06Controler.o statusReportEx.o -o example-moveTo
 	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) getHeight.cpp -I$(SRC_DIR) usb2lin06Controler.o statusReportEx.o -o example-getHeight 
 
-debug: DEBUG = -DDEBUG
+debug: DEBUG = -DDEBUG -g
 debug: build
 	
 clean:

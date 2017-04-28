@@ -12,6 +12,7 @@
 #include <unistd.h> //usleep
 #include <iostream>
 #include <iomanip>  // std::setw
+#include <bitset>
 
 namespace usb2lin06
 {
@@ -118,6 +119,34 @@ bool usb2lin06Controler::getStatusReport()
   return success;
 }
 
+bool usb2lin06Controler::getStatusReportEx(unsigned char *buf)
+{
+  DEBUGOUT("getStatusReport()");
+
+  memset(buf, 0, StatusReportSize);
+
+  int ret = libusb_control_transfer(
+     udev,
+     URB_getEx.bmRequestType,
+     URB_getEx.bRequest,
+     URB_getEx.wValue,
+     URB_getEx.wIndex,
+     buf,
+     URB_getEx.wLength,
+     DefaultUSBtimeoutMS
+     );
+  if(ret!=StatusReportSize)
+  {
+    cerr<<"ERROR: failed to get statusReport. "<<ret<<"!="<<StatusReportSize<<endl;
+    return false;
+  }
+
+  std::cout<<"reportEx:"<<endl;
+  for(int i=0;i<StatusReportSize;i++) std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)buf[i]<< " ";
+  std::cout<<endl;
+
+  return true;
+}
 
 bool usb2lin06Controler::initDevice()
 {

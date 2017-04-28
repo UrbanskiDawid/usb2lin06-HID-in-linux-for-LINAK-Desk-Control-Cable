@@ -92,6 +92,14 @@ enum FeatureRaportID
   GetExtLinData=9
 };
 
+#define USB2LIN_featureReportID_modeOfOperation 3
+#define USB2LIN_featureReportID_getLINdata 4
+#define USB2LIN_featureReportID_controlCBC 5
+#define USB2LIN_featureReportID_controlTD 6
+#define USB2LIN_featureReportID_controlCBD_TD 8 /*using ID37/38*/
+#define USB2LIN_featureReportID_getLINdataExtended 9
+//========================================================================================================
+
 //========================================================================================================
 #define StatusReport_ID 0x4
 #define StatusReport_nrOfBytes 0x38
@@ -135,18 +143,13 @@ struct sCtrlURB
 };
 
 //========================================================================================================
-#define USB2LIN_featureReportID_modeOfOperation 3
-#define USB2LIN_featureReportID_getLINdata 4
-#define USB2LIN_featureReportID_controlCBC 5
-#define USB2LIN_featureReportID_controlTD 6
-#define USB2LIN_featureReportID_controlCBD_TD 8 /*using ID37/38*/
-#define USB2LIN_featureReportID_getLINdataExtended 9
 
 #define USB2LIN_featureReportID_modeOfOperation_default 4
 
 #define URB_wValue_Init      0x0303 /*?Feature3, ReportID: 3 - USB2LIN_featureReportID_modeOfOperation?*/
 #define URB_wValue_GetStatus 0x0304 /*?Feature3, ReportID: 4 - USB2LIN_featureReportID_getLINdata?*/
 #define URB_wValue_Move      0x0305 /*?Feature3, ReportID: 5 - USB2LIN_featureReportID_controlCBC?*/
+#define URB_wValue_GetExt    0x0309 /*?Feature3, ReportID: 9 - USB2LIN_featureReportID_getLINdataExtended?*/
 
 #define URB_RequestType_SetClassInterface 0x21 /*LIBUSB_RECIPIENT_INTERFACE & LIBUSB_REQUEST_TYPE_CLASS & LIBUSB_ENDPOINT_OUT*/
 #define URB_RequestType_GetClassInterface 0xA1 /*LIBUSB_RECIPIENT_INTERFACE & LIBUSB_REQUEST_TYPE_CLASS & LIBUSB_ENDPOINT_IN*/
@@ -157,6 +160,7 @@ struct sCtrlURB
 const struct sCtrlURB URB_init      = { URB_RequestType_SetClassInterface, HID_REPORT_SET, URB_wValue_Init,      0, StatusReportSize};
 const struct sCtrlURB URB_getStatus = { URB_RequestType_GetClassInterface, HID_REPORT_GET, URB_wValue_GetStatus, 0, StatusReportSize};
 const struct sCtrlURB URB_move      = { URB_RequestType_SetClassInterface, HID_REPORT_SET, URB_wValue_Move,      0, StatusReportSize};
+const struct sCtrlURB URB_getEx     = { URB_RequestType_GetClassInterface, HID_REPORT_GET, URB_wValue_GetExt,    0, StatusReportSize};
 
 #define DefaultUSBtimeoutMS 1000
 
