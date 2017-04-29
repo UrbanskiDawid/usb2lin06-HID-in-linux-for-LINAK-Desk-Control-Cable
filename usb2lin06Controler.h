@@ -10,6 +10,7 @@
 #include <libusb-1.0/libusb.h>
 #include "usb2lin06.h"
 #include "statusReportEx.h"
+#include "usb2linException.h"
 
 //some sources
 //http://matthias.vallentin.net/blog/2007/04/writing-a-linux-kernel-driver-for-an-unknown-usb-device/
@@ -39,6 +40,9 @@ libusb_context *ctx = NULL;
 libusb_device_handle* udev = NULL;
 StatusReportEx report;
 
+/*Experimental - unknown structure:( */
+unsigned char reportExperimental[64];
+
 /*
  * Get currnet status from device
  * to get status we have to send a request.
@@ -63,10 +67,11 @@ StatusReportEx report;
  * anwswer to this contains 64B of data example:
   04380000ee07000000000000000000000000000001800000000000000000000001001000000000000000ffff0000000000000000000000000000100000000000
 */
-bool getStatusReport();
+StatusReportEx* getStatusReport();
 
 /*Experimental*/
-bool getStatusReportEx(unsigned char *);
+unsigned char* getStatusReportEx();
+
 /*
 [ 6725.772231] usb 1-1.2: new full-speed USB device number 6 using ehci-pci
 [ 6725.867477] usb 1-1.2: New USB device found, idVendor=12d3, idProduct=0002
@@ -76,13 +81,13 @@ bool getStatusReportEx(unsigned char *);
 [ 6725.867488] usb 1-1.2: SerialNumber: Љ
 [ 6725.875451] hid-generic 0003:12D3:0002.0008: hiddev0,hidraw0: USB HID v1.11 Device [Linak DeskLine A/S USB Control Link] on usb-0000:00:1a.0-1.2/input0
 */
-bool openDevice();
+void openDevice();
 
 /*
  * init device, after poweron the device is not ready to work @see isStatusReportNotReady
  * this is the initial procedure. It has to be run once after device is powered on
  */
-bool initDevice();
+void initDevice();
 
 /*
  * use: moveUp, moveDown, moveStop

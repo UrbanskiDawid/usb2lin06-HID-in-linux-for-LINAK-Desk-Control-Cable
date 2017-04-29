@@ -17,40 +17,29 @@
 namespace usb2lin06
 {
 
-using std::cerr;
 using std::endl;
 
-void printLibStrErr(int errID)
-{
-  switch(errID)
-  {
-    case LIBUSB_ERROR_TIMEOUT:   cerr<<"ERROR the transfer timed out (and populates transferred)"<<endl; break;
-    case LIBUSB_ERROR_PIPE:      cerr<<"the endpoint halted"<<endl; break;
-    case LIBUSB_ERROR_OVERFLOW:  cerr<<"the device offered more data, see Packets and overflows"<<endl; break;
-    case LIBUSB_ERROR_NO_DEVICE: cerr<<"the device has been disconnected"<<endl; break;
-    default:                     cerr<<"another LIBUSB_ERROR code on other failures"<<errID<<endl; break;
-  }
-}
 
 usb2lin06Controler::usb2lin06Controler(bool initialization)
 {
   DEBUGOUT("usb2lin06Controler()");
   {
-    if(libusb_init(&ctx)!=0) throw std::runtime_error("failed to init libusb");
+    int libusbError = libusb_init(&ctx);
+    if(libusbError!=LIBUSB_SUCCESS) { throw exception(libusbError,"libusb_init failed"); }
     libusb_set_debug(ctx,LIBUSB_LOG_LEVEL); 
   } 
 
   DEBUGOUT("usb2lin06Controler() - find and open device");
   {
-    if(!openDevice())
-    {
-      libusb_exit(ctx);
-      ctx=NULL;
-      throw std::runtime_error("can't open device");
-    }    
+    try{
+      openDevice();
+      if(initialization) initDevice();
+    }catch(exception e){
+      libusb_close(udev); udev=NULL;
+      libusb_exit(ctx);   ctx=NULL;
+      throw e;
+    }
   }
-
-  if(initialization) initDevice();  
 }
 
 usb2lin06Controler::~usb2lin06Controler()
@@ -60,7 +49,7 @@ usb2lin06Controler::~usb2lin06Controler()
     if(ctx)  libusb_exit(ctx);
 }
 
-bool usb2lin06Controler::getStatusReport()
+StatusReportEx* usb2lin06Controler::getStatusReport()
 {
   DEBUGOUT("getStatusReport()");
 
@@ -79,8 +68,8 @@ bool usb2lin06Controler::getStatusReport()
      );
   if(ret!=StatusReportSize)
   {
-    cerr<<"ERROR: failed to get statusReport. "<<ret<<"!="<<StatusReportSize<<endl;
-    printLibStrErr(ret);
+    std::ostringstream msg; msg << "Failed to get statusReport "<<ret<<"!= "<<StatusReportSize;
+    throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
     /* Broken pipe is EPIPE. That means the device sent a STALL to your control
     message. If you don't know what a STALL is, check the USB specs.
 
@@ -88,41 +77,37 @@ bool usb2lin06Controler::getStatusReport()
     situation, it usually means what you sent was wrong.
     I'd double check the request, requesttype, value and index arguments.
     I'd also double check the title_request buffer.*/
-    return false;
   }
 
 #ifdef DEBUG
   std::cout<<"DEBUG: received ";
-  for(int i=0;i<StatusReportSize;i++) {
-    std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";
-  }
+  for(int i=0;i<StatusReportSize;i++) std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";
   std::cout<<std::endl;
 #endif
 
-  bool success=true;
   DEBUGOUT("getStatusReport() - check received data");
   {
     if(report.featureRaportID!=StatusReport_ID)
     {
-      cerr<<"ERROR: wrong featureRaportID: '"<<report.featureRaportID<<"' expected: '"<<StatusReport_ID<<"'"<<endl;
-      success=false;
+      std::ostringstream msg; msg << "wrong featureRaportID: '"<<report.featureRaportID<<"' expected: '"<<StatusReport_ID;
+      throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
     }
 
     const int experimental=0x34;
     if(report.numberOfBytes!=StatusReport_nrOfBytes && report.numberOfBytes!=experimental)
     {
-      cerr<<"ERROR: wrong numberOfBytes: '"<<report.numberOfBytes<<"' expected: '"<<StatusReport_nrOfBytes<<"' or '"<<experimental<<"'"<<endl;
-      success=false;
+      std::ostringstream msg; msg << "wrong numberOfBytes: '"<<report.numberOfBytes<<"' expected: '"<<StatusReport_nrOfBytes<<"' or '"<<experimental<<"'",
+      throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
     }
   }
-
-  return success;
+  return &report;
 }
 
-bool usb2lin06Controler::getStatusReportEx(unsigned char *buf)
+unsigned char* usb2lin06Controler::getStatusReportEx()
 {
   DEBUGOUT("getStatusReport()");
 
+  unsigned char *buf = reinterpret_cast<unsigned char*>(&reportExperimental);
   memset(buf, 0, StatusReportSize);
 
   int ret = libusb_control_transfer(
@@ -137,30 +122,27 @@ bool usb2lin06Controler::getStatusReportEx(unsigned char *buf)
      );
   if(ret!=StatusReportSize)
   {
-    cerr<<"ERROR: failed to get statusReport. "<<ret<<"!="<<StatusReportSize<<endl;
-    return false;
+    std::ostringstream msg; msg <<"Failed to get statusReportEx "<<ret<<" != "<<StatusReportSize;
+    throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
   }
 
+#ifdef DEBUG
   std::cout<<"reportEx:"<<endl;
   for(int i=0;i<StatusReportSize;i++) std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)buf[i]<< " ";
   std::cout<<endl;
-
-  return true;
+#endif
+  return buf;
 }
 
-bool usb2lin06Controler::initDevice()
+void usb2lin06Controler::initDevice()
 {
   DEBUGOUT("initDevice()");
 
-  if(udev == NULL ) return false;
+  if(udev == NULL ) return;
 
-  if(!getStatusReport())
-  {
-    cerr<<"ERROR geting init status report!"<<endl;
-    return false;
-  }
+  getStatusReport();
 
-  if(!report.isStatusReportNotReady()) return false;
+  if(!report.isStatusReportNotReady()) return;
 
   //  USBHID 128b SET_REPORT Request bmRequestType 0x21 bRequest 0x09 wValue 0x0303 wIndex 0 wLength 64
   //  03 04 00 fb 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -184,9 +166,7 @@ bool usb2lin06Controler::initDevice()
       );
     if(ret!=StatusReportSize)
     {
-      cerr<<"ERROR: device not ready - initializing failed on step1 ret="<<ret<<endl;
-      printLibStrErr(ret);
-      return false;
+      throw exception(RETURN_CODES::DEVICE_CANT_INIT,"device not ready - initializing failed on step1 ret="+ret);
     }
   }
 
@@ -197,26 +177,59 @@ bool usb2lin06Controler::initDevice()
   {
     if(!moveEnd())
     {
-      cerr<<"ERROR: device not ready - initializing failed on step2 (moveEnd)"<<endl;
-      return false;
+      throw exception(RETURN_CODES::DEVICE_CANT_INIT,"device not ready - initializing failed on step2 (moveEnd)");
     }
   }
 
   usleep(100000);//0.1sec //must give device some time to think;)
 
-  return true;
+  return;
 }
 
-
-bool usb2lin06Controler::openDevice()
+libusb_device *findFirstDevice(libusb_context *context)
 {
-  DEBUGOUT("openDevice()");
+    libusb_device **list = NULL;
+    int countOrErrorCode = libusb_get_device_list(context, &list);
+    if(countOrErrorCode<0) throw exception(countOrErrorCode,"libusb_get_device_list failed");
 
-  udev = libusb_open_device_with_vid_pid(0,VENDOR,PRODUCT);
-  if(udev==NULL)
+    int ret=-1;
+    for (size_t idx = 0; idx < countOrErrorCode; ++idx)
+    {
+        libusb_device *device = list[idx];
+        if(ret==-1)
+        {
+          libusb_device_descriptor desc;
+          if(libusb_get_device_descriptor(device, &desc) == LIBUSB_SUCCESS)
+          {
+            if(desc.idVendor == VENDOR && desc.idProduct == PRODUCT){
+                ret=idx;
+                continue; //note no libusb_unref_device
+            }
+          }
+        }
+        libusb_unref_device(device);
+    }
+
+    libusb_free_device_list(list,0);
+
+    return (ret==-1 ? NULL : list[ret]);
+}
+
+void usb2lin06Controler::openDevice()
+{
+  DEBUGOUT("openDevice() find & open");
   {
-    cerr<<"ERROR: cant find usb device vendor:"<<VENDOR<<" product:"<<PRODUCT<<endl;
-    return false;
+    libusb_device *device = findFirstDevice(ctx);
+    if(device==NULL)
+    {
+      throw exception(RETURN_CODES::DEVICE_CANT_FIND);
+    }
+
+    int errorCode = libusb_open(device, &udev);   //udev = libusb_open_device_with_vid_pid(0,VENDOR,PRODUCT);
+    if(errorCode!=LIBUSB_SUCCESS)
+    {
+      throw exception(RETURN_CODES::DEVICE_CANT_OPEN);
+    }
   }
 
   DEBUGOUT("openDevice() claim device");
@@ -224,22 +237,20 @@ bool usb2lin06Controler::openDevice()
     //Check whether a kernel driver is attached to interface #0. If so, we'll need to detach it.
     if (libusb_kernel_driver_active(udev, 0))
     {
-      if (libusb_detach_kernel_driver(udev, 0) != 0)
+      int libusbError = libusb_detach_kernel_driver(udev, 0);
+      if(libusbError!=LIBUSB_SUCCESS)
       {
-        cerr<<"ERROR: detaching kernel driver."<<endl;
-        return false;
+        throw exception(libusbError,"can't detaching kernel driver");
       }
     }
 
     // Claim interface #0
-    if (libusb_claim_interface(udev, 0) != 0)
+    int libusbError =libusb_claim_interface(udev, 0);
+    if(libusbError!=LIBUSB_SUCCESS)
     {
-      cerr<<"ERROR: claiming interface."<<endl;
-      return false;
+      throw exception(libusbError,"can't detachingclaiming interface.");
     }
   }
-
-  return true;
 }
 
 
@@ -292,7 +303,6 @@ int usb2lin06Controler::getHeight()
 {
   return (int)report.ref1.pos;
 }
-
 
 float usb2lin06Controler::getHeightInCM()
 {

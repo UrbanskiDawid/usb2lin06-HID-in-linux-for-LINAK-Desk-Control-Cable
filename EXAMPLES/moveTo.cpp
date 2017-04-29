@@ -69,16 +69,17 @@ int main (int argc,char **argv)
   
   DEBUGOUT("main() - start");
   {
-    long long int tmp= atoll(argv[1]);
+    long long int tmp = atoll(argv[1]);
     targetHeight=tmp;
 
     if(argc!=2 || targetHeight<0 || tmp > (long long int)targetHeight)
     {
       printHelp();
-      return -1;
+      return usb2lin06::RETURN_CODES::ARGS_MISSING;
     }
   }
 
+  try{
   DEBUGOUT("main() - init");
   usb2lin06::usb2lin06Controler controler;
 
@@ -86,16 +87,18 @@ int main (int argc,char **argv)
   {
     if( moveTo(controler,targetHeight) )
     {
-      cout<<"success"<<endl;
       succes=true;
     }
-    else
-      cout<<"failed"<<endl;
+  }
+
+  }catch(usb2lin06::exception e){
+    std::cerr<<"Error: "<<" "<<e.what()<<std::endl;
+    return e.getErrorCode();
   }
 
   DEBUGOUT("main() - end");
   {
-    cout<<"DONE"<<endl;
+    cout<<"DONE "<<(succes ? "success" : "failed")<<endl;
   }
-  return (succes ? 0 : -1);
+  return (succes ? usb2lin06::RETURN_CODES::OK : -1);
 }

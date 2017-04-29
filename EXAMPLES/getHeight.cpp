@@ -13,14 +13,11 @@ bool getCurrentHeight(usb2lin06Controler &controler,RefControlInput &hRaw, float
   hCM=-1.0f;
   hRaw=-1;
 
-  if(controler.getStatusReport())
+  if(!controler.getStatusReport()->isStatusReportNotReady())
   {
-     if(!controler.report.isStatusReportNotReady())
-     {
-        hRaw=controler.getHeight();
-        hCM=controler.getHeightInCM();
-        return true;
-     }
+      hRaw=controler.getHeight();
+      hCM=controler.getHeightInCM();
+      return true;
   }
 
   return false;
@@ -28,6 +25,7 @@ bool getCurrentHeight(usb2lin06Controler &controler,RefControlInput &hRaw, float
 
 int main (int argc,char **argv)
 {
+  try{
   DEBUGOUT("main() - init");
   usb2lin06Controler controler;
 
@@ -49,6 +47,11 @@ int main (int argc,char **argv)
   DEBUGOUT("main() - end");
   {
     cout<<"DONE"<<endl;
+  }
+
+  }catch(usb2lin06::exception e){
+    std::cerr<<"Error: "<<" "<<e.what()<<std::endl;
+    return e.getErrorCode();
   }
   return 0;
 }

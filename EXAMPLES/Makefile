@@ -19,21 +19,24 @@ check:
 	@lsusb -v -d 12d3:0002 && echo "OK" || echo "ERROR";
 
 statusReportEx: 
-	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) -c ../statusReportEx.cpp -o statusReportEx.o
+	$(CC) $(CFLAGS) $(LFLAGS) -c ../statusReportEx.cpp -o statusReportEx.o
 
-usb2lin06Controler: statusReportEx
-	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) -c ../usb2lin06Controler.cpp -o usb2lin06Controler.o
+usb2linException:
+	$(CC) $(CFLAGS) $(LFLAGS) -c ../usb2linException.cpp -o usb2linException.o
+
+usb2lin06Controler: statusReportEx usb2linException
+	$(CC) $(CFLAGS) $(LFLAGS)  -c ../usb2lin06Controler.cpp -o usb2lin06Controler.o
 
 build: usb2lin06Controler
-	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) getStatus.cpp -I$(SRC_DIR) usb2lin06Controler.o statusReportEx.o -o example-getStatus 
-	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) moveTo.cpp    -I$(SRC_DIR) usb2lin06Controler.o statusReportEx.o -o example-moveTo
-	$(CC) $(DEBUG) $(CFLAGS) $(LFLAGS) getHeight.cpp -I$(SRC_DIR) usb2lin06Controler.o statusReportEx.o -o example-getHeight 
+	$(CC) $(CFLAGS) $(LFLAGS) getStatus.cpp -I$(SRC_DIR) usb2lin06Controler.o usb2linException.o statusReportEx.o -o example-getStatus 
+	$(CC) $(CFLAGS) $(LFLAGS) moveTo.cpp    -I$(SRC_DIR) usb2lin06Controler.o usb2linException.o statusReportEx.o -o example-moveTo
+	$(CC) $(CFLAGS) $(LFLAGS) getHeight.cpp -I$(SRC_DIR) usb2lin06Controler.o usb2linException.o statusReportEx.o -o example-getHeight 
 
-debug: DEBUG = -DDEBUG -g
+debug: CFLAGS += -DDEBUG -g
 debug: build
 	
 clean:
-	rm -f example-moveTo example-getStatus example-getHeight usb2lin06Controler.o statusReportEx.o
+	rm -f example-moveTo example-getStatus example-getHeight usb2lin06Controler.o statusReportEx.o usb2linException.o
 run:
 	sudo ./example-getStatus
 

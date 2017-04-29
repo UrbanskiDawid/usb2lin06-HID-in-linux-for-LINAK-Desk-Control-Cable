@@ -82,7 +82,7 @@ int main (int argc,char **argv)
       if(SETTINGS_COUNT<0 || SETTINGS_COUNT > 99999)
       {
         cerr<<"ERROR: arg1 - remetitions must be an integer in range <0,99999>"<<endl;
-        return -1;
+        return usb2lin06::RETURN_CODES::ARGS_MISSING;
       }
     }
 
@@ -94,13 +94,14 @@ int main (int argc,char **argv)
       if(delaySec<0.1f and delaySec>10.0f)
       {
         cerr<<"ERROR: arg2 - time [sec] must get greater than 0.1 and less than 10 sec seconds"<<endl;
-        return -1;
+        return usb2lin06::RETURN_CODES::ARGS_WRONG;
       }
 
       SETTINGS_CommadDelay = 1000000*delaySec;
     }
   }
 
+  try{
   DEBUGOUT("main() - init");
   usb2lin06::usb2lin06Controler controler(false);
 
@@ -119,22 +120,13 @@ int main (int argc,char **argv)
 
   DEBUGOUT("main() - check if device it ready");
   {
-    if(!controler.getStatusReport())
+    if(controler.getStatusReport()->isStatusReportNotReady())
     {
-      cerr<<"ERROR: cant get initial status"<<endl;
-      return 1;
-    }else{
-      if(controler.report.isStatusReportNotReady()){
         cout<<" device is not ready"<<endl;
-        if(!controler.initDevice())
-        {
-          cerr<<"ERROR: can't init device!"<<endl;
-          return 1;
-        }
-      }else{
-        cout<<" device is ready"<<endl;
-      }
-    }
+        controler.initDevice();        
+     }else{
+       cout<<" device is ready"<<endl;
+     }
   }
 
   DEBUGOUT("main() - getting status SETTINGS_COUNT times");
@@ -155,9 +147,14 @@ int main (int argc,char **argv)
     }
   }
 
+  }catch(usb2lin06::exception e){
+    std::cerr<<"Error: "<<" "<<e.what()<<std::endl;
+    return e.getErrorCode();
+  }
+
   DEBUGOUT("main() - end");
   {
     cout<<"DONE"<<endl;
   }
-  return 0;
+  return usb2lin06::RETURN_CODES::OK;
 }
