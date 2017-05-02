@@ -186,47 +186,55 @@ void usb2lin06Controler::initDevice()
   return;
 }
 
-libusb_device *findFirstDevice(libusb_context *context)
+bool findFirstDevice( //alternatrive: libusb_open_device_with_vid_pid
+  libusb_context *ctx,
+  struct libusb_device **found
+  )
 {
-    libusb_device **list = NULL;
-    int countOrErrorCode = libusb_get_device_list(context, &list);
-    if(countOrErrorCode<0) throw exception(countOrErrorCode,"libusb_get_device_list failed");
+  DEBUGOUT("findFirstDevice()");
 
-    int ret=-1;
-    for (size_t idx = 0; idx < countOrErrorCode; ++idx)
+  *found = NULL;
+
+	libusb_device **devs;
+	if (libusb_get_device_list(ctx, &devs) < 0)
+		return false;
+
+	libusb_device_handle *dev_handle = NULL;
+	size_t i = 0;
+
+  libusb_device *dev;
+	while ((dev = devs[i++]) != NULL)
+  {
+		libusb_device_descriptor desc;
+		if (libusb_get_device_descriptor(dev, &desc)<0) continue;
+
+		if (desc.idVendor == VENDOR && desc.idProduct == PRODUCT)
     {
-        libusb_device *device = list[idx];
-        if(ret==-1)
-        {
-          libusb_device_descriptor desc;
-          if(libusb_get_device_descriptor(device, &desc) == LIBUSB_SUCCESS)
-          {
-            if(desc.idVendor == VENDOR && desc.idProduct == PRODUCT){
-                ret=idx;
-                continue; //note no libusb_unref_device
-            }
-          }
-        }
-        libusb_unref_device(device);
+      *found=dev;
+      break;
     }
+	}
 
-    libusb_free_device_list(list,0);
+  if(*found==NULL) {
+    DEBUGOUT("findFirstDevice() - failed");
+    return false;
+  }
 
-    return (ret==-1 ? NULL : list[ret]);
+  DEBUGOUT("findFirstDevice() - success");
+  return true;
 }
 
 void usb2lin06Controler::openDevice()
 {
   DEBUGOUT("openDevice() find & open");
   {
-    libusb_device *device = findFirstDevice(ctx);
-    if(device==NULL)
+    libusb_device *device;
+    if(!findFirstDevice(ctx,&device))
     {
       throw exception(RETURN_CODES::DEVICE_CANT_FIND);
     }
 
-    int errorCode = libusb_open(device, &udev);   //udev = libusb_open_device_with_vid_pid(0,VENDOR,PRODUCT);
-    if(errorCode!=LIBUSB_SUCCESS)
+    if(libusb_open(device, &udev)!=LIBUSB_SUCCESS)
     {
       throw exception(RETURN_CODES::DEVICE_CANT_OPEN);
     }
