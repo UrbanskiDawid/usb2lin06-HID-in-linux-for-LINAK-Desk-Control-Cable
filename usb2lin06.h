@@ -11,6 +11,10 @@
 #define VENDOR  0x12d3
 #define PRODUCT 0x0002
 
+#ifdef __cplusplus
+namespace usb2lin06{
+#endif
+
 //========================================================================================================
 struct LINIDvalidFlag
 {
@@ -169,5 +173,9 @@ const struct sCtrlURB URB_getEx     = { URB_RequestType_GetClassInterface, HID_R
 #define HEIGHT_moveUpwards   0x8000
 #define HEIGHT_moveEnd       0x8001
 //------
+
+#ifdef __cplusplus
+}//usb2lin06
+#endif
 
 #endif //usb2lin06_h

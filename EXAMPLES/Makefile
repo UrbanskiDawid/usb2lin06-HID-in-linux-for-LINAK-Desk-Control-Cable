@@ -18,25 +18,25 @@ check:
 	@echo -n "usb device: "
 	@lsusb -v -d 12d3:0002 && echo "OK" || echo "ERROR";
 
-statusReportEx: 
-	$(CC) $(CFLAGS) $(LFLAGS) -c ../statusReportEx.cpp -o statusReportEx.o
+controler:
+	make -C Controler
 
-usb2linException:
-	$(CC) $(CFLAGS) $(LFLAGS) -c ../usb2linException.cpp -o usb2linException.o
-
-usb2lin06Controler: statusReportEx usb2linException
-	$(CC) $(CFLAGS) $(LFLAGS)  -c ../usb2lin06Controler.cpp -o usb2lin06Controler.o
-
-build: usb2lin06Controler
-	$(CC) $(CFLAGS) $(LFLAGS) getStatus.cpp -I$(SRC_DIR) usb2lin06Controler.o usb2linException.o statusReportEx.o -o example-getStatus 
-	$(CC) $(CFLAGS) $(LFLAGS) moveTo.cpp    -I$(SRC_DIR) usb2lin06Controler.o usb2linException.o statusReportEx.o -o example-moveTo
-	$(CC) $(CFLAGS) $(LFLAGS) getHeight.cpp -I$(SRC_DIR) usb2lin06Controler.o usb2linException.o statusReportEx.o -o example-getHeight 
+build: controler
+	$(CC) $(CFLAGS) $(LFLAGS) -o example-getStatus getStatus.cpp -I ./Controler/ -I ../ ./Controler/*.o
+	$(CC) $(CFLAGS) $(LFLAGS) -o example-moveTo    moveTo.cpp    -I ./Controler/ -I ../ ./Controler/*.o
+	$(CC) $(CFLAGS) $(LFLAGS) -o example-getHeight getHeight.cpp -I ./Controler/ -I ../ ./Controler/*.o
 
 debug: CFLAGS += -DDEBUG -g
-debug: build
+debug:
+	make -C Controler debug
+	$(CC) $(CFLAGS) $(LFLAGS) -o example-getStatus getStatus.cpp -I ./Controler/ -I ../ ./Controler/*.o
+	$(CC) $(CFLAGS) $(LFLAGS) -o example-moveTo    moveTo.cpp    -I ./Controler/ -I ../ ./Controler/*.o
+	$(CC) $(CFLAGS) $(LFLAGS) -o example-getHeight getHeight.cpp -I ./Controler/ -I ../ ./Controler/*.o
 	
 clean:
-	rm -f example-moveTo example-getStatus example-getHeight usb2lin06Controler.o statusReportEx.o usb2linException.o
+	make -C Controler clean
+	rm -f example-moveTo example-getStatus example-getHeight 	
+
 run:
 	sudo ./example-getStatus
 

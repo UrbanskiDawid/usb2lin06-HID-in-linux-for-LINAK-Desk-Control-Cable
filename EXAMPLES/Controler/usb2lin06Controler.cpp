@@ -49,7 +49,7 @@ usb2lin06Controler::~usb2lin06Controler()
     if(ctx)  libusb_exit(ctx);
 }
 
-StatusReportEx* usb2lin06Controler::getStatusReport()
+statusReport* usb2lin06Controler::getStatusReport()
 {
   DEBUGOUT("getStatusReport()");
 
@@ -103,7 +103,7 @@ StatusReportEx* usb2lin06Controler::getStatusReport()
   return &report;
 }
 
-unsigned char* usb2lin06Controler::getStatusReportEx()
+unsigned char* usb2lin06Controler::getstatusReport()
 {
   DEBUGOUT("getStatusReport()");
 
@@ -122,7 +122,7 @@ unsigned char* usb2lin06Controler::getStatusReportEx()
      );
   if(ret!=StatusReportSize)
   {
-    std::ostringstream msg; msg <<"Failed to get statusReportEx "<<ret<<" != "<<StatusReportSize;
+    std::ostringstream msg; msg <<"Failed to get statusReport "<<ret<<" != "<<StatusReportSize;
     throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
   }
 

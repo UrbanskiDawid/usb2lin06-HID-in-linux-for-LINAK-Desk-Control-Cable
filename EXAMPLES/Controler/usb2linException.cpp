@@ -3,7 +3,6 @@
 
 namespace usb2lin06
 {
-
 std::string errorToStr(int errID)
 {
   switch(errID)//libusb errors

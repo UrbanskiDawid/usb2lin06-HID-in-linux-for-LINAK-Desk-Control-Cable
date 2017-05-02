@@ -8,8 +8,8 @@
 #pragma once
 
 #include <libusb-1.0/libusb.h>
-#include "usb2lin06.h"
-#include "statusReportEx.h"
+#include "../../usb2lin06.h"
+#include "statusReport.h"
 #include "usb2linException.h"
 
 //some sources
@@ -38,7 +38,7 @@ usb2lin06Controler(bool initialization=true);
 
 libusb_context *ctx = NULL;
 libusb_device_handle* udev = NULL;
-StatusReportEx report;
+statusReport report;
 
 /*Experimental - unknown structure:( */
 unsigned char reportExperimental[64];
@@ -67,10 +67,10 @@ unsigned char reportExperimental[64];
  * anwswer to this contains 64B of data example:
   04380000ee07000000000000000000000000000001800000000000000000000001001000000000000000ffff0000000000000000000000000000100000000000
 */
-StatusReportEx* getStatusReport();
+statusReport* getStatusReport();
 
 /*Experimental*/
-unsigned char* getStatusReportEx();
+unsigned char* getstatusReport();
 
 /*
 [ 6725.772231] usb 1-1.2: new full-speed USB device number 6 using ehci-pci

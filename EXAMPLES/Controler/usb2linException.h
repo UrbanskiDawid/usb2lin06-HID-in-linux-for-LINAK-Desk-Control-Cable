@@ -4,7 +4,6 @@
 
 namespace usb2lin06
 {
-
 enum RETURN_CODES
 {
     OK=0,
@@ -29,6 +28,4 @@ class exception: public std::exception {
     const char *what() const throw();
     const int getErrorCode();
 };
-
-
 }

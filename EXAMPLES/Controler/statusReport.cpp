@@ -1,4 +1,4 @@
-#include "statusReportEx.h"
+#include "statusReport.h"
 #include <iostream>
 #include <iomanip>
 
@@ -6,7 +6,7 @@ namespace usb2lin06
 {
 using namespace std;
 
-bool StatusReportEx::isStatusReportNotReady() const
+bool statusReport::isStatusReportNotReady() const
 {
   const unsigned char *report_bytes=reinterpret_cast<const unsigned char*>(this); 
   if(report_bytes[0] != StatusReport_ID
@@ -23,7 +23,7 @@ bool StatusReportEx::isStatusReportNotReady() const
   return true;
 }
 
-float StatusReportEx::getHeightCM(float offsetCM) const
+float statusReport::getHeightCM(float offsetCM) const
 {
   return offsetCM+ref1.pos*0.01f;
 }
@@ -86,7 +86,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::Diagnostic &a)
   <<(int)a.event[5] <<SeparatorEnd;
 }
 
-std::ostream& operator << (std::ostream &o, const StatusReportEx &a) {
+std::ostream& operator << (std::ostream &o, const statusReport &a) {
 
   auto handsetToStr = [](const uint16_t &h)-> const char*
   {
@@ -129,7 +129,7 @@ std::ostream& operator << (std::ostream &o, const StatusReportEx &a) {
   o<<SeparatorEnd;
 }
 
-void StatusReportEx::print() const
+void statusReport::print() const
 {
   if(isStatusReportNotReady())
     cerr<<"ERROR: statusReport -> device not ready"<<endl;
