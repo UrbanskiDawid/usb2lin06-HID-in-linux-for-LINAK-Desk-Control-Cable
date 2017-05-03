@@ -3,6 +3,7 @@
 This is a simple program for controlling LINAK Desk Control Cable in linux.
 Its created as linux alternative to: https://www.linak.com/products/controls.aspx?product=LINAK+Desk+Control+SW
 
+Testes on: Debian8 x64, raspbian jessie
 Tested on model: usb2lin06 with CONTROL BOX CBD6S.
 
 ### Dependencies
