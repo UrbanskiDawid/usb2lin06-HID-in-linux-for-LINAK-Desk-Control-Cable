@@ -4,6 +4,8 @@
  * email: git@dawidurbanski.pl
  * Dawid: 25 marzec 2017
  *
+ * NOTE: this file must be compatible with C language (for kernel module build) 
+ *
  */
 #ifndef usb2lin06_h
 #define usb2lin06_h 1
