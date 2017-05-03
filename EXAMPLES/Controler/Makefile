@@ -5,7 +5,7 @@ CFLAGS=-std=c++1y
 LFLAGS=-lstdc++ -lusb-1.0
 
 clean:
-	rm *.o
+	rm -f *.o
 
 controler:
 	$(CC) $(CFLAGS) $(LFLAGS) -I../../ -o statusReport.o       -c statusReport.cpp 

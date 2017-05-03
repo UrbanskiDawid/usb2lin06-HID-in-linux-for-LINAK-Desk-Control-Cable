@@ -16,6 +16,7 @@ build:
 	make -C /lib/modules/$(shell uname -r)/build M=$(shell pwd) modules -lusb
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(shell pwd) clean
+	rm -f *.symvers *.order *.ko *.mod.c
 start:
 	sudo insmod $(MODULE_NAME).ko
 stop:
