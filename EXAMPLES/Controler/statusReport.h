@@ -3,11 +3,11 @@
 #include <cstdint>
 #include "usb2lin06.h"
 
-namespace usb2lin06
-{
+namespace usb2lin06 {
 using StatusReportBase = usb2lin06::StatusReport;
+namespace controler {
 
-struct statusReport : StatusReportBase//NOTE: this is a workaround struct from usb2lin06.h cannot have functions due to usage in kernel
+struct statusReport : StatusReportBase
 {
  /*
   * height is a 16 signed integer with the height in 1/10 mm with 0 as lowest height of actuators
@@ -22,7 +22,13 @@ struct statusReport : StatusReportBase//NOTE: this is a workaround struct from u
   */
   bool isStatusReportNotReady() const;
 
+ /*
+  * put this object to std out
+  */
   void print() const;
 };
 static_assert(sizeof(statusReport)==StatusReportSize,"wrong size of StatusReport");
+
+}//controler
+
 }//usb2lin06

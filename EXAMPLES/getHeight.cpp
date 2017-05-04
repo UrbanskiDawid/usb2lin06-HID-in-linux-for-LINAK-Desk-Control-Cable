@@ -3,12 +3,16 @@
 #include "usb2lin06Controler.h"
 
 using namespace std;
-using namespace usb2lin06;
+using namespace usb2lin06::controler;
+using usb2lin06::RefControlInput;
 
 /*
  * get current height reported by device status
  */
-bool getCurrentHeight(usb2lin06Controler &controler,RefControlInput &hRaw, float &hCM)
+bool getCurrentHeight(
+  usb2lin06Controler &controler,
+  RefControlInput &hRaw,
+  float &hCM)
 {
   hCM=-1.0f;
   hRaw=-1;
@@ -49,8 +53,8 @@ int main (int argc,char **argv)
     cout<<"DONE"<<endl;
   }
 
-  }catch(usb2lin06::exception e){
-    std::cerr<<"Error: "<<" "<<e.what()<<std::endl;
+  }catch(usb2lin06::controler::exception e){
+    cerr<<"Error: "<<" "<<e.what()<<endl;
     return e.getErrorCode();
   }
   return 0;

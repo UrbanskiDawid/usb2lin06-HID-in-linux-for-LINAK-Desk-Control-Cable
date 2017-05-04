@@ -8,15 +8,16 @@
 #include "usb2lin06Controler.h"
 
 using namespace std;
+using namespace usb2lin06::controler;
 
 /*
  * WARNING: dangerous
  * this will move towards goal
  * TODO: stop if cannot move
  */
-bool moveTo(usb2lin06::usb2lin06Controler & controler, uint16_t target)
+bool moveTo(usb2lin06Controler & controler, uint16_t target)
 {
-  const usb2lin06::statusReport &r = controler.report;
+  const statusReport &r = controler.report;
 
   const unsigned int max_a = 3; unsigned int a = max_a;//stuck protection
   uint16_t oldH=0;  
@@ -75,13 +76,13 @@ int main (int argc,char **argv)
     if(argc!=2 || targetHeight<0 || tmp > (long long int)targetHeight)
     {
       printHelp();
-      return usb2lin06::RETURN_CODES::ARGS_MISSING;
+      return RETURN_CODES::ARGS_MISSING;
     }
   }
 
   try{
   DEBUGOUT("main() - init");
-  usb2lin06::usb2lin06Controler controler;
+  usb2lin06Controler controler;
 
   DEBUGOUT("main() - move to targetHeight",targetHeight);
   {
@@ -91,7 +92,7 @@ int main (int argc,char **argv)
     }
   }
 
-  }catch(usb2lin06::exception e){
+  }catch(usb2lin06::controler::exception e){
     std::cerr<<"Error: "<<" "<<e.what()<<std::endl;
     return e.getErrorCode();
   }
@@ -100,5 +101,5 @@ int main (int argc,char **argv)
   {
     cout<<"DONE "<<(succes ? "success" : "failed")<<endl;
   }
-  return (succes ? usb2lin06::RETURN_CODES::OK : -1);
+  return (succes ? RETURN_CODES::OK : -1);
 }

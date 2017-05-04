@@ -1,8 +1,8 @@
 #include <iostream>
 #include "usb2linException.h"
 
-namespace usb2lin06
-{
+namespace usb2lin06 {
+namespace controler {
 std::string errorToStr(int errID)
 {
   switch(errID)//libusb errors
@@ -43,4 +43,5 @@ exception::exception(const int &p_errorCode,const std::string& p_msg):
 const char *exception::what() const throw() { return this->m_msg.c_str(); };
 
 const int exception::getErrorCode() { return m_error; }
+}//namespace controler
 }

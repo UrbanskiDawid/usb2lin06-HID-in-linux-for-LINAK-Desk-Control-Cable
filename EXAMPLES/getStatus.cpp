@@ -8,6 +8,7 @@
 #include "usb2lin06Controler.h"
 
 using namespace std;
+using namespace usb2lin06::controler;
 
 /*
  * just some universal device descripor print out
@@ -82,7 +83,7 @@ int main (int argc,char **argv)
       if(SETTINGS_COUNT<0 || SETTINGS_COUNT > 99999)
       {
         cerr<<"ERROR: arg1 - remetitions must be an integer in range <0,99999>"<<endl;
-        return usb2lin06::RETURN_CODES::ARGS_MISSING;
+        return RETURN_CODES::ARGS_MISSING;
       }
     }
 
@@ -94,7 +95,7 @@ int main (int argc,char **argv)
       if(delaySec<0.1f and delaySec>10.0f)
       {
         cerr<<"ERROR: arg2 - time [sec] must get greater than 0.1 and less than 10 sec seconds"<<endl;
-        return usb2lin06::RETURN_CODES::ARGS_WRONG;
+        return RETURN_CODES::ARGS_WRONG;
       }
 
       SETTINGS_CommadDelay = 1000000*delaySec;
@@ -103,7 +104,7 @@ int main (int argc,char **argv)
 
   try{
   DEBUGOUT("main() - init");
-  usb2lin06::usb2lin06Controler controler(false);
+  usb2lin06Controler controler(false);
 
   DEBUGOUT("main() - print some device info");
   {
@@ -147,8 +148,8 @@ int main (int argc,char **argv)
     }
   }
 
-  }catch(usb2lin06::exception e){
-    std::cerr<<"Error: "<<" "<<e.what()<<std::endl;
+  }catch(usb2lin06::controler::exception e){
+    cerr<<"Error: "<<" "<<e.what()<<endl;
     return e.getErrorCode();
   }
 
@@ -156,5 +157,5 @@ int main (int argc,char **argv)
   {
     cout<<"DONE"<<endl;
   }
-  return usb2lin06::RETURN_CODES::OK;
+  return RETURN_CODES::OK;
 }

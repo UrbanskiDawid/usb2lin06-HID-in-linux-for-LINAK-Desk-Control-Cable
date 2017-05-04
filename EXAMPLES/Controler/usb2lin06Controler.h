@@ -28,8 +28,8 @@
   #define LIBUSB_LOG_LEVEL LIBUSB_LOG_LEVEL_WARNING
 #endif
 
-namespace usb2lin06
-{
+namespace usb2lin06 {
+namespace controler {
 
 struct usb2lin06Controler
 {
@@ -67,10 +67,10 @@ unsigned char reportExperimental[64];
  * anwswer to this contains 64B of data example:
   04380000ee07000000000000000000000000000001800000000000000000000001001000000000000000ffff0000000000000000000000000000100000000000
 */
-statusReport* getStatusReport();
+const statusReport* getStatusReport();
 
 /*Experimental*/
-unsigned char* getstatusReport();
+const unsigned char* getstatusReport();
 
 /*
 [ 6725.772231] usb 1-1.2: new full-speed USB device number 6 using ehci-pci
@@ -136,7 +136,8 @@ int getHeight();
 /*
  * get height in centimeters, rough - precision: 1decimal points
  */
-float getHeightInCM();
+float getHeightInCM() const;
 };//usb2lin06Controler
 
+}//namespace controler
 }//namespace

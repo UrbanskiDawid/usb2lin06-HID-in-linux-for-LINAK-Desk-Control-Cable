@@ -2,8 +2,9 @@
 #include <iostream>
 #include <iomanip>
 
-namespace usb2lin06
-{
+namespace usb2lin06 {
+namespace controler {
+
 using namespace std;
 
 bool statusReport::isStatusReportNotReady() const
@@ -32,7 +33,7 @@ const char SeparatorFields=',';
 const char SeparatorStart='{';
 const char SeparatorEnd='}';
 
-std::ostream& operator << (std::ostream &o, const usb2lin06::LINIDvalidFlag &a)
+ostream& operator << (ostream &o, const usb2lin06::LINIDvalidFlag &a)
 {
   o<<"flags:" <<SeparatorStart
   <<dec<<"0b"
@@ -56,7 +57,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::LINIDvalidFlag &a)
   <<SeparatorEnd;
 }
 
-std::ostream& operator << (std::ostream &o, const usb2lin06::Status &a)
+ostream& operator << (ostream &o, const usb2lin06::Status &a)
 {
   o<<"status:"<<SeparatorStart
   <<dec
@@ -64,7 +65,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::Status &a)
   <<SeparatorEnd;
 }
 
-std::ostream& operator << (std::ostream &o, const usb2lin06::RefPosStatSpeed &a)
+ostream& operator << (ostream &o, const usb2lin06::RefPosStatSpeed &a)
 {
   o<<"posStatSpeed:" <<SeparatorStart
   <<hex<<setfill('0')
@@ -73,7 +74,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::RefPosStatSpeed &a)
   <<hex<<"0x"<<setw(4)<<(short)a.speed <<SeparatorEnd;
 }
 
-std::ostream& operator << (std::ostream &o, const usb2lin06::Diagnostic &a)
+ostream& operator << (ostream &o, const usb2lin06::Diagnostic &a)
 {
   o<<"diag:"   <<SeparatorStart
   <<hex<<"0x"<<setw(4)<<(short)a.type     <<SeparatorFields
@@ -86,7 +87,7 @@ std::ostream& operator << (std::ostream &o, const usb2lin06::Diagnostic &a)
   <<(int)a.event[5] <<SeparatorEnd;
 }
 
-std::ostream& operator << (std::ostream &o, const statusReport &a) {
+ostream& operator << (ostream &o, const statusReport &a) {
 
   auto handsetToStr = [](const uint16_t &h)-> const char*
   {
@@ -136,4 +137,5 @@ void statusReport::print() const
   else
     cout<<*this<<endl;
 }
+}//namespace controler
 }//namespace

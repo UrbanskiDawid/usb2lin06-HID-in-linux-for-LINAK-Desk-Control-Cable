@@ -2,8 +2,8 @@
 #include <string>
 #include <libusb-1.0/libusb.h>
 
-namespace usb2lin06
-{
+namespace usb2lin06 {
+namespace controler {
 enum RETURN_CODES
 {
     OK=0,
@@ -28,4 +28,5 @@ class exception: public std::exception {
     const char *what() const throw();
     const int getErrorCode();
 };
+}//namespace controler
 }

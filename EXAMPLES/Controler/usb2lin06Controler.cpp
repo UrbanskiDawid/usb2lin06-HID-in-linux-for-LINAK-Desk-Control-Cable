@@ -14,8 +14,8 @@
 #include <iomanip>  // std::setw
 #include <bitset>
 
-namespace usb2lin06
-{
+namespace usb2lin06 {
+namespace controler {
 
 using std::endl;
 
@@ -49,7 +49,7 @@ usb2lin06Controler::~usb2lin06Controler()
     if(ctx)  libusb_exit(ctx);
 }
 
-statusReport* usb2lin06Controler::getStatusReport()
+const statusReport* usb2lin06Controler::getStatusReport()
 {
   DEBUGOUT("getStatusReport()");
 
@@ -103,7 +103,7 @@ statusReport* usb2lin06Controler::getStatusReport()
   return &report;
 }
 
-unsigned char* usb2lin06Controler::getstatusReport()
+const unsigned char* usb2lin06Controler::getstatusReport()
 {
   DEBUGOUT("getStatusReport()");
 
@@ -312,9 +312,10 @@ int usb2lin06Controler::getHeight()
   return (int)report.ref1.pos;
 }
 
-float usb2lin06Controler::getHeightInCM()
+float usb2lin06Controler::getHeightInCM() const
 {
   return (float)report.ref1.pos/98.0f;
 }
 
+}//namespace controler
 }
