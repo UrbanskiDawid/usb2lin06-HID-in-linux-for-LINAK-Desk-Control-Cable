@@ -147,8 +147,12 @@ private:
 	/*
 	 * 'print' buffer to stdout
 	 */
-	inline void buffer2stdout(unsigned char * buffer,unsigned int num) const;
+	inline void buffer2stdout(const unsigned char * buffer,const unsigned int num) const;
 
+	/*
+	 * wrapper for libusb_control_transfer
+	 */
+	int sendUSBcontrolTransfer(const sCtrlURB & urb, unsigned char * data);
 };//usb2lin06Controler
 
 }//namespace controler

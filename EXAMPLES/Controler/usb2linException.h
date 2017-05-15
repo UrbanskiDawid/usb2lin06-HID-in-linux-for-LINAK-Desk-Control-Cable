@@ -1,6 +1,7 @@
 #include <exception>
 #include <string>
 #include <libusb-1.0/libusb.h>
+#include <sstream>      // std::ostringstream
 
 namespace usb2lin06 {
 namespace controler {
@@ -25,6 +26,7 @@ class exception: public std::exception {
     int m_error;
   public:
     exception(const int &p_errorCode,const std::string& p_msg="");
+    exception(const int &p_errorCode,const std::ostringstream& p_msg);
     const char *what() const throw();
     const int getErrorCode();
 };

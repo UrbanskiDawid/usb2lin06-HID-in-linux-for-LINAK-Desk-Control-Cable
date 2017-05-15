@@ -40,6 +40,16 @@ exception::exception(const int &p_errorCode,const std::string& p_msg):
   if(p_msg!="") m_msg+=" "+p_msg;
 }
 
+exception::exception(const int &p_errorCode,const std::ostringstream & p_msg):
+  m_msg(errorToStr(p_errorCode)),
+  m_error(p_errorCode),
+  std::exception()
+{
+  const std::string s = p_msg.str();
+  if(s!="") m_msg+=" "+s;
+}
+
+
 const char *exception::what() const throw() { return this->m_msg.c_str(); };
 
 const int exception::getErrorCode() { return m_error; }

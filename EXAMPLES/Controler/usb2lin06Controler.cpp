@@ -55,20 +55,11 @@ const statusReport* usb2lin06Controler::getStatusReport()
 
   unsigned char *buf = getReportBuffer(true);
 
-  int ret = libusb_control_transfer(
-     udev,
-     URB_getStatus.bmRequestType,
-     URB_getStatus.bRequest,
-     URB_getStatus.wValue,
-     URB_getStatus.wIndex,
-     buf,
-     URB_getStatus.wLength,
-     DefaultUSBtimeoutMS
-     );
+  int ret = sendUSBcontrolTransfer(URB_getStatus,buf);
   if(ret!=StatusReportSize)
   {
     std::ostringstream msg; msg << "Failed to get statusReport "<<ret<<"!= "<<StatusReportSize;
-    throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
+    throw exception(RETURN_CODES::MESSAGE_ERROR,msg);
     /* Broken pipe is EPIPE. That means the device sent a STALL to your control
     message. If you don't know what a STALL is, check the USB specs.
 
@@ -88,14 +79,20 @@ const statusReport* usb2lin06Controler::getStatusReport()
     if(report.featureRaportID!=StatusReport_ID)
     {
       std::ostringstream msg; msg << "wrong featureRaportID: '"<<report.featureRaportID<<"' expected: '"<<StatusReport_ID;
-      throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
+      throw exception(RETURN_CODES::MESSAGE_ERROR,msg);
     }
 
-    const int experimental=0x34;
-    if(report.numberOfBytes!=StatusReport_nrOfBytes && report.numberOfBytes!=experimental)
+    if(report.numberOfBytes!=StatusReport_nrOfBytes )
     {
-      std::ostringstream msg; msg << "wrong numberOfBytes: '"<<report.numberOfBytes<<"' expected: '"<<StatusReport_nrOfBytes<<"' or '"<<experimental<<"'",
-      throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
+      const int experimental=0x34;
+      if(report.numberOfBytes!=experimental)
+      {
+          std::ostringstream msg; msg << "Livo exception! numberOfBytes'"<<report.numberOfBytes<<"' expected: '"<<experimental;
+          throw exception(RETURN_CODES::MESSAGE_ERROR,msg);    
+      }
+
+      std::ostringstream msg; msg << "wrong numberOfBytes: '"<<report.numberOfBytes<<"' expected: '"<<StatusReport_nrOfBytes;
+      throw exception(RETURN_CODES::MESSAGE_ERROR,msg);
     }
   }
   return &report;
@@ -108,20 +105,11 @@ const unsigned char* usb2lin06Controler::getExperimentalStatusReport()
   unsigned char *buf = reinterpret_cast<unsigned char*>(&reportExperimental);
   memset(buf, 0, StatusReportSize);
 
-  int ret = libusb_control_transfer(
-     udev,
-     URB_getEx.bmRequestType,
-     URB_getEx.bRequest,
-     URB_getEx.wValue,
-     URB_getEx.wIndex,
-     buf,
-     URB_getEx.wLength,
-     DefaultUSBtimeoutMS
-     );
+  int ret = sendUSBcontrolTransfer(URB_getEx,buf);
   if(ret!=StatusReportSize)
   {
     std::ostringstream msg; msg <<"Failed to get statusReport "<<ret<<" != "<<StatusReportSize;
-    throw exception(RETURN_CODES::MESSAGE_ERROR,msg.str());
+    throw exception(RETURN_CODES::MESSAGE_ERROR,msg);
   }
 
 #ifdef DEBUG
@@ -153,16 +141,7 @@ void usb2lin06Controler::initDevice()
     buf[2]=0x00;                                            //?
     buf[3]=0xfb;                                            //?
 
-    int ret = libusb_control_transfer(
-      udev,
-      URB_init.bmRequestType,
-      URB_init.bRequest,
-      URB_init.wValue,
-      URB_init.wIndex,
-      buf,
-      URB_init.wLength,
-      DefaultUSBtimeoutMS
-      );
+    int ret = sendUSBcontrolTransfer(URB_init,buf);
     if(ret!=StatusReportSize)
     {
       throw exception(RETURN_CODES::DEVICE_CANT_INIT,"device not ready - initializing failed on step1 ret="+ret);
@@ -274,16 +253,7 @@ bool usb2lin06Controler::move(int16_t targetHeight)
   memcpy( data+5, &targetHeight, sizeof(targetHeight) );
   memcpy( data+7, &targetHeight, sizeof(targetHeight) );
 
-  int ret=libusb_control_transfer(
-    udev,
-    URB_move.bmRequestType,
-    URB_move.bRequest,
-    URB_move.wValue,
-    URB_move.wIndex,
-    data,
-    URB_move.wLength,
-    DefaultUSBtimeoutMS
-  );
+  int ret=sendUSBcontrolTransfer(URB_move,data);
   return (ret==StatusReportSize);
 }
 
@@ -316,7 +286,7 @@ float usb2lin06Controler::getHeightInCM() const
   return (float)report.ref1.pos/98.0f;
 }
 
-inline void usb2lin06Controler::buffer2stdout(unsigned char * buf,unsigned int num) const
+inline void usb2lin06Controler::buffer2stdout(const unsigned char * buf,const unsigned int num) const
 {
   std::cout<<std::hex;
   for(int i=0;i<num;i++)  std::cout<<std::setw(2)<<std::setfill('0')<<(int)buf[i]<<" ";
@@ -328,6 +298,27 @@ inline unsigned char * usb2lin06Controler::getReportBuffer(bool clear)
   unsigned char * buf = reinterpret_cast<unsigned char*>(&report);
   if(clear) memset(buf, 0, StatusReportSize);
   return buf;
+}
+
+int usb2lin06Controler::sendUSBcontrolTransfer(const sCtrlURB & urb, unsigned char * data)
+{
+  DEBUGOUT("sendUSBcontrolTransfer()",data);
+
+  #ifdef DEBUG
+  std::cout<<"DEBUG: sending ";
+  buffer2stdout(data,StatusReportSize);
+  #endif  
+
+  return libusb_control_transfer(
+    udev,
+    urb.bmRequestType,
+    urb.bRequest,
+    urb.wValue,
+    urb.wIndex,
+    data,
+    urb.wLength,
+    DefaultUSBtimeoutMS
+  );  
 }
 
 }//namespace controler
