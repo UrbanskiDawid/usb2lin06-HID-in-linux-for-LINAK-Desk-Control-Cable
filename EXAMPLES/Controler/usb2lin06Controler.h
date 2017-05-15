@@ -70,7 +70,7 @@ unsigned char reportExperimental[64];
 const statusReport* getStatusReport();
 
 /*Experimental*/
-const unsigned char* getstatusReport();
+const unsigned char* getExperimentalStatusReport();
 
 /*
 [ 6725.772231] usb 1-1.2: new full-speed USB device number 6 using ehci-pci
@@ -137,6 +137,18 @@ int getHeight();
  * get height in centimeters, rough - precision: 1decimal points
  */
 float getHeightInCM() const;
+
+private:
+	/*
+	* get report as uchar buffer
+	*/
+	inline unsigned char * getReportBuffer(bool clear=false);
+
+	/*
+	 * 'print' buffer to stdout
+	 */
+	inline void buffer2stdout(unsigned char * buffer,unsigned int num) const;
+
 };//usb2lin06Controler
 
 }//namespace controler

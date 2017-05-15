@@ -53,8 +53,7 @@ const statusReport* usb2lin06Controler::getStatusReport()
 {
   DEBUGOUT("getStatusReport()");
 
-  unsigned char *buf = reinterpret_cast<unsigned char*>(&report);
-  memset(buf, 0, StatusReportSize);
+  unsigned char *buf = getReportBuffer(true);
 
   int ret = libusb_control_transfer(
      udev,
@@ -81,8 +80,7 @@ const statusReport* usb2lin06Controler::getStatusReport()
 
 #ifdef DEBUG
   std::cout<<"DEBUG: received ";
-  for(int i=0;i<StatusReportSize;i++) std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)(unsigned char)buf[i]<< " ";
-  std::cout<<std::endl;
+  buffer2stdout(buf,StatusReportSize);
 #endif
 
   DEBUGOUT("getStatusReport() - check received data");
@@ -103,7 +101,7 @@ const statusReport* usb2lin06Controler::getStatusReport()
   return &report;
 }
 
-const unsigned char* usb2lin06Controler::getstatusReport()
+const unsigned char* usb2lin06Controler::getExperimentalStatusReport()
 {
   DEBUGOUT("getStatusReport()");
 
@@ -128,9 +126,9 @@ const unsigned char* usb2lin06Controler::getstatusReport()
 
 #ifdef DEBUG
   std::cout<<"reportEx:"<<endl;
-  for(int i=0;i<StatusReportSize;i++) std::cout<<std::setw(2)<<std::setfill('0')<<std::hex<<(int)buf[i]<< " ";
-  std::cout<<endl;
+  buffer2stdout(buf,StatusReportSize);
 #endif
+
   return buf;
 }
 
@@ -147,8 +145,9 @@ void usb2lin06Controler::initDevice()
   //  USBHID 128b SET_REPORT Request bmRequestType 0x21 bRequest 0x09 wValue 0x0303 wIndex 0 wLength 64
   //  03 04 00 fb 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   {
-    unsigned char buf[StatusReportSize];
+    unsigned char *buf = getReportBuffer();
     memset(buf, 0, StatusReportSize);
+
     buf[0]=USB2LIN_featureReportID_modeOfOperation;         //0x03 Feature report ID = 3
     buf[1]=USB2LIN_featureReportID_modeOfOperation_default; //0x04 mode of operation
     buf[2]=0x00;                                            //?
@@ -240,7 +239,7 @@ void usb2lin06Controler::openDevice()
     }
   }
 
-  DEBUGOUT("openDevice() claim device");
+  DEBUGOUT("openDevice() claim interface");
   {
     //Check whether a kernel driver is attached to interface #0. If so, we'll need to detach it.
     if (libusb_kernel_driver_active(udev, 0))
@@ -315,6 +314,20 @@ int usb2lin06Controler::getHeight()
 float usb2lin06Controler::getHeightInCM() const
 {
   return (float)report.ref1.pos/98.0f;
+}
+
+inline void usb2lin06Controler::buffer2stdout(unsigned char * buf,unsigned int num) const
+{
+  std::cout<<std::hex;
+  for(int i=0;i<num;i++)  std::cout<<std::setw(2)<<std::setfill('0')<<(int)buf[i]<<" ";
+  std::cout<<std::dec<<endl;
+}
+
+inline unsigned char * usb2lin06Controler::getReportBuffer(bool clear)
+{
+  unsigned char * buf = reinterpret_cast<unsigned char*>(&report);
+  if(clear) memset(buf, 0, StatusReportSize);
+  return buf;
 }
 
 }//namespace controler
