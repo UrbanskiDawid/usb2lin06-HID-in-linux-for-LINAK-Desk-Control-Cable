@@ -54,6 +54,7 @@ const statusReport* usb2lin06Controler::getStatusReport()
   DEBUGOUT("getStatusReport()");
 
   unsigned char *buf = getReportBuffer(true);
+  buf[0]=StatusReport_ID;
 
   int ret = sendUSBcontrolTransfer(URB_getStatus,buf);
   if(ret!=StatusReportSize)
@@ -82,7 +83,7 @@ const statusReport* usb2lin06Controler::getStatusReport()
       throw exception(RETURN_CODES::MESSAGE_ERROR,msg);
     }
 
-    if(report.numberOfBytes!=StatusReport_nrOfBytes )
+    if(report.numberOfBytes!=StatusReport_nrOfBytes)
     {
       const int experimental=0x34;
       if(report.numberOfBytes!=experimental)
@@ -133,8 +134,7 @@ void usb2lin06Controler::initDevice()
   //  USBHID 128b SET_REPORT Request bmRequestType 0x21 bRequest 0x09 wValue 0x0303 wIndex 0 wLength 64
   //  03 04 00 fb 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   {
-    unsigned char *buf = getReportBuffer();
-    memset(buf, 0, StatusReportSize);
+    unsigned char *buf = getReportBuffer(true);
 
     buf[0]=USB2LIN_featureReportID_modeOfOperation;         //0x03 Feature report ID = 3
     buf[1]=USB2LIN_featureReportID_modeOfOperation_default; //0x04 mode of operation
@@ -228,6 +228,7 @@ void usb2lin06Controler::openDevice()
       {
         throw exception(libusbError,"can't detaching kernel driver");
       }
+      DEBUGOUT("openDevice() kernel driver detached");
     }
 
     // Claim interface #0
