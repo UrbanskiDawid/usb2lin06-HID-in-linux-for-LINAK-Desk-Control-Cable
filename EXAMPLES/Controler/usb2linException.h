@@ -1,6 +1,6 @@
 #include <exception>
 #include <string>
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #include <sstream>      // std::ostringstream
 
 namespace usb2lin06 {

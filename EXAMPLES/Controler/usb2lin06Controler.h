@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #include "usb2lin06.h"
 #include "statusReport.h"
 #include "usb2linException.h"

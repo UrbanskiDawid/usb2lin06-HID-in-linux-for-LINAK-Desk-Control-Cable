@@ -1,6 +1,9 @@
 CC=g++
 CFLAGS=-std=c++1y
 LFLAGS=-lstdc++ -lusb-1.0
+IFLAGS=-I ./Controler/ -I ../ -I/usr/include/libusb-1.0
+FLAGS=$(CFLAGS) $(LFLAGS) $(IFLAGS)
+
 DEBUG=
 SRC_DIR=..
 
@@ -22,18 +25,17 @@ check:
 
 build:
 	make -C Controler $(DEBUG)
-	$(CC) $(CFLAGS) $(LFLAGS) -o example-getStatus getStatus.cpp -I ./Controler/ -I ../ ./Controler/*.o
-	$(CC) $(CFLAGS) $(LFLAGS) -o example-moveTo    moveTo.cpp    -I ./Controler/ -I ../ ./Controler/*.o
-	$(CC) $(CFLAGS) $(LFLAGS) -o example-getHeight getHeight.cpp -I ./Controler/ -I ../ ./Controler/*.o
+	$(CC) $(FLAGS) -o example-getStatus -c getStatus.cpp
+	$(CC) $(FLAGS) -o example-moveTo    -c moveTo.cpp
+	$(CC) $(FLAGS) -o example-getHeight -c getHeight.cpp
 
 debug:	CFLAGS += -DDEBUG -g
 debug:	DEBUG=debug
 debug:	build
-	
+
 clean:
 	make -C Controler clean
-	rm -f example-moveTo example-getStatus example-getHeight 	
+	rm -f example-moveTo example-getStatus example-getHeight
 
 run:
 	sudo ./example-getStatus
-
