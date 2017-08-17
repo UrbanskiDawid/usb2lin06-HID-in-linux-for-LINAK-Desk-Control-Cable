@@ -11,6 +11,7 @@
 #include "usb2lin06.h"
 #include "statusReport.h"
 #include "usb2linException.h"
+#include <iostream>
 
 //some sources
 //http://matthias.vallentin.net/blog/2007/04/writing-a-linux-kernel-driver-for-an-unknown-usb-device/
@@ -21,7 +22,7 @@
 // http://libusb.sourceforge.net/api-1.0/
 //CONTROL URB https://www.safaribooksonline.com/library/view/linux-device-drivers/0596005903/ch13.html
 #ifdef DEBUG
-  #define DEBUGOUT(...) fprintf(stderr,"DEBUG %s:%d %s\n",__FILE__, __LINE__,__VA_ARGS__);
+  #define DEBUGOUT(...) fprintf(stderr, "DEBUG: %s:%d", __FILE__, __LINE__); fprintf (stderr, __VA_ARGS__)
   #define LIBUSB_LOG_LEVEL LIBUSB_LOG_LEVEL_DEBUG
 #else
   #define DEBUGOUT(msg,...) ;

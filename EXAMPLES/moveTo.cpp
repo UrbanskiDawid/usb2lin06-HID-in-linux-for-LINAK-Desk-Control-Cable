@@ -26,7 +26,7 @@ bool moveTo(usb2lin06Controler & controler, uint16_t target)
 
   while(true)
   {
-    DEBUGOUT("moveTo()",target)
+    DEBUGOUT("%s %d","moveTo()",target);
     controler.move(target);
 
     usleep(200000);
@@ -84,7 +84,7 @@ int main (int argc,char **argv)
   DEBUGOUT("main() - init");
   usb2lin06Controler controler;
 
-  DEBUGOUT("main() - move to targetHeight",targetHeight);
+  DEBUGOUT("%s %d", "main() - move to targetHeight",targetHeight);
   {
     if( moveTo(controler,targetHeight) )
     {

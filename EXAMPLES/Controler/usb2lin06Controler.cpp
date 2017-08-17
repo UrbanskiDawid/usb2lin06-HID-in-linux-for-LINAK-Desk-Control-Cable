@@ -243,7 +243,7 @@ void usb2lin06Controler::openDevice()
 
 bool usb2lin06Controler::move(int16_t targetHeight)
 {
-  DEBUGOUT("move()",targetHeight);
+  DEBUGOUT("%s %d", "move()",targetHeight);
 
   unsigned char data[StatusReportSize];
   memset (data,0,sizeof(data));
@@ -303,7 +303,7 @@ inline unsigned char * usb2lin06Controler::getReportBuffer(bool clear)
 
 int usb2lin06Controler::sendUSBcontrolTransfer(const sCtrlURB & urb, unsigned char * data)
 {
-  DEBUGOUT("sendUSBcontrolTransfer()",data);
+  DEBUGOUT("%s %s","sendUSBcontrolTransfer()",data);
 
   #ifdef DEBUG
   std::cout<<"DEBUG: sending ";
