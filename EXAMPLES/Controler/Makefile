@@ -2,16 +2,16 @@
 
 CC=g++
 CFLAGS=-std=c++1y
-IFLAGS=-I../../ -I/usr/include/libusb-1.0
-FLAGS=$(CFLAGS) $(IFLAGS)
+IFLAGS=-I/usr/include/libusb-1.0/ -I../../
+FLAGS=$(CFLAGS) -lusb-1.0 $(IFLAGS)
 
 clean:
 	rm -f *.o
 
 controler:
-	$(CC) $(FLAGS) -o statusReport.o       -c statusReport.cpp
-	$(CC) $(FLAGS) -o usb2linException.o   -c usb2linException.cpp
-	$(CC) $(FLAGS) -o usb2lin06Controler.o -c usb2lin06Controler.cpp
+	$(CC) $(CFLAGS) -o statusReport.o       -c statusReport.cpp       $(IFLAGS)
+	$(CC) $(CFLAGS) -o usb2linException.o   -c usb2linException.cpp   $(IFLAGS)
+	$(CC) $(CFLAGS) -o usb2lin06Controler.o -c usb2lin06Controler.cpp $(IFLAGS)
 
 debug: CFLAGS += -DDEBUG -g
 debug: controler
