@@ -3,8 +3,8 @@
 This is a simple program for controlling LINAK Desk Control Cable in linux.
 Its created as linux alternative to: https://www.linak.com/products/controls.aspx?product=LINAK+Desk+Control+SW
 
-Testes on: Debian8 x64, raspbian jessie, Ubuntu 16.04.3, Arch (18August2017)
-
+Tested on: Debian8 x64, raspbian jessie, Ubuntu 16.04.3, Arch (18August2017)
+Tested on: Fedora26 (2Oct2017)
 Tested on model: usb2lin06 with CONTROL BOX CBD6S.
 
 ### Dependencies
@@ -12,6 +12,10 @@ this is using: **libusb-1.0**
 >to intall libusb-1.0 (debian)
 ```sh
 $ sudo apt-get install libusb-1.0-0-dev
+```
+>to install libusb (fedora)
+```sh
+$ sudo dnf install libusb-devel
 ```
 
 ### Capabilities
@@ -41,6 +45,13 @@ $ sudo apt-get install libusb-1.0-0-dev
 > move desk to very bottom
 ```sh
   $ sudo ./example-moveTo 0
+```
+
+### To run as regular 
+To run as regular user you will have to give access to device as the user you want to run it as. The easiest way to do this may be to implement a udev rule such that the devices when connected is reconized as user or group is given permission. 
+You can do this by creating a new file at cat /etc/udev/rules.d/90-desk-permission.rules 
+```sh
+SUBSYSTEM=="usb", ATTR{idVendor}=="12d3", ATTR{idProduct}=="0002", GROUP="group", MODE="0660"
 ```
 
 ### Wireshark 
