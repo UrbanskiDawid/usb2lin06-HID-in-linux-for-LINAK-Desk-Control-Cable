@@ -26,7 +26,7 @@ usb2lin06Controler::usb2lin06Controler(bool initialization)
   {
     int libusbError = libusb_init(&ctx);
     if(libusbError!=LIBUSB_SUCCESS) { throw exception(libusbError,"libusb_init failed"); }
-    libusb_set_debug(ctx,LIBUSB_LOG_LEVEL); 
+    libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL);
   } 
 
   DEBUGOUT("usb2lin06Controler() - find and open device");
